@@ -1,0 +1,470 @@
+/* ==========================================================================
+   THREE_HEARTS HANDMADES - Admin Portal Stylesheet
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+  --bg-cream: #FDF8F5;
+  --pastel-pink: #FFE5EC;
+  --pastel-pink-hover: #FFD3DD;
+  --pastel-lavender: #E8E7F5;
+  --primary-plum: #8E6070;
+  --primary-plum-dark: #6D4352;
+  --text-dark: #4A2E35;
+  --text-muted: #8A7278;
+  --white: #FFFFFF;
+  
+  --border-radius: 16px;
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  background-color: var(--white);
+  border-bottom: 1px solid var(--pastel-pink);
+  padding: 15px 5%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(142, 96, 112, 0.03);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary-plum);
+  text-decoration: none;
+}
+
+.btn-back {
+  text-decoration: none;
+  color: var(--primary-plum-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 18px;
+  border-radius: 20px;
+  background-color: var(--pastel-pink);
+  transition: var(--transition);
+  border: 1px solid var(--pastel-pink-hover);
+}
+
+.btn-back:hover {
+  background-color: var(--primary-plum);
+  color: var(--white);
+  border-color: var(--primary-plum);
+}
+
+/* Layout */
+.admin-layout {
+  max-width: 1400px;
+  width: 90%;
+  margin: 40px auto;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 30px;
+  flex-grow: 1;
+}
+
+.admin-card {
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(142, 96, 112, 0.03);
+  border: 1px solid rgba(255, 229, 236, 0.4);
+}
+
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  color: var(--primary-plum-dark);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-bottom: 25px;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--pastel-pink-hover);
+  background-color: var(--bg-cream);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+  transition: var(--transition);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-plum);
+  background-color: var(--white);
+  box-shadow: 0 0 0 3px rgba(142, 96, 112, 0.08);
+}
+
+input[type="file"] {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 10px 0;
+}
+
+.help-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn-submit {
+  flex-grow: 1;
+  background-color: var(--primary-plum);
+  color: var(--white);
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-submit:hover {
+  background-color: var(--primary-plum-dark);
+}
+
+.btn-cancel {
+  background-color: #E2E8F0;
+  color: #475569;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cancel:hover {
+  background-color: #CBD5E1;
+}
+
+/* Image Previews inside Form */
+.image-previews-container {
+  margin-top: 15px;
+  background-color: var(--bg-cream);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px dashed var(--pastel-pink-hover);
+}
+
+.image-previews-container h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.preview-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-item {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--pastel-pink-hover);
+}
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-item .remove-preview-img {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(239, 68, 68, 0.9);
+  color: var(--white);
+  border: none;
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Inventory List Section */
+.products-list-wrapper {
+  overflow-x: auto;
+}
+
+.inventory-table-container {
+  width: 100%;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid var(--pastel-pink);
+  font-size: 0.9rem;
+}
+
+.inventory-table th {
+  font-weight: 600;
+  color: var(--primary-plum-dark);
+  background-color: var(--bg-cream);
+}
+
+.table-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--pastel-pink);
+  background-color: var(--pastel-pink);
+}
+
+.colors-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.color-tag {
+  background-color: var(--pastel-lavender);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit {
+  background-color: var(--pastel-lavender);
+  color: var(--primary-plum-dark);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-edit:hover {
+  background-color: var(--primary-plum);
+  color: var(--white);
+}
+
+.btn-delete {
+  background-color: #FEE2E2;
+  color: #EF4444;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-delete:hover {
+  background-color: #EF4444;
+  color: var(--white);
+}
+
+/* Footer */
+footer {
+  background-color: var(--text-dark);
+  color: var(--bg-cream);
+  padding: 20px 5%;
+  text-align: center;
+  font-size: 0.8rem;
+  margin-top: auto;
+}
+
+footer code {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+    width: 95%;
+  }
+  
+  .moderation-section {
+    grid-column: span 1 !important;
+  }
+}
+
+/* ==========================================================================
+   ADDED: Admin Review Moderation panel styling
+   ========================================================================== */
+
+.moderation-section {
+  width: 100%;
+}
+
+.reviews-list-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+.review-stars-list {
+  color: #D4AF37;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.review-text-cell {
+  max-width: 320px;
+  font-size: 0.84rem;
+  color: var(--text-dark);
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal !important;
+}
+
+/* Review Status Tags */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.status-badge.pending {
+  background-color: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+.status-badge.approved {
+  background-color: #D1FAE5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+.status-badge.rejected {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FECCA8;
+}
+
+.status-badge.deleted {
+  background-color: #E2E8F0;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+/* Action button variations */
+.btn-approve {
+  background-color: #D1FAE5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-approve:hover {
+  background-color: #059669;
+  color: var(--white);
+  border-color: #059669;
+}
+
+.btn-reject {
+  background-color: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-reject:hover {
+  background-color: #D97706;
+  color: var(--white);
+  border-color: #D97706;
+}
+

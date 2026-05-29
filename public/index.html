@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Three_Hearts Handmades | Cozy Woolen Hair Bands</title>
+  <meta name="description" content="Premium small-scale handmade woolen hair bands crafted with love, warmth, and family bonding. Discover our cozy, comfortable, and unique collections.">
+  
+  <!-- Favicon placeholder (using SVG heart inline) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💖</text></svg>">
+  
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="custom-cursor-enabled">
+
+  <!-- Custom Mouse Follower -->
+  <div class="mouse-follower" id="mouse-follower"></div>
+
+  <!-- Animated Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader-logo">Three_Hearts<span>.</span></div>
+    <div class="loader-bar-container">
+      <div class="loader-bar"></div>
+    </div>
+  </div>
+
+  <!-- Canvas for Floating Wool Particles -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Glassmorphic Header -->
+  <header id="header">
+    <a href="#" class="logo" id="header-logo">
+      <div class="logo-heart-thread">
+        <!-- SVG showing heart with wool thread twist -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </div>
+      <span>Three_Hearts</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-link-item">Home</a></li>
+      <li><a href="#shop" class="nav-link-item">Collections</a></li>
+      <li><a href="#why-choose-us" class="nav-link-item">Our Vibe</a></li>
+      <li><a href="#testimonials" class="nav-link-item">Stories</a></li>
+      <li><a href="#contact" class="nav-link-item">Contact Us</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="btn-header-order ripple-btn" id="header-shop-btn">Order Now</button>
+      <div class="menu-toggle" id="menu-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main>
+    
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+      <div class="hero-tag">Handmade Boutique</div>
+      <h1 id="hero-title">Welcome to<br><span>Three_Hearts Handmades</span></h1>
+      <p class="subtitle" id="hero-subtitle">Beautiful Handmade Woolen Hair Bands Crafted with Love, Warmth, and Care for Your Cozy Days.</p>
+      
+      <div class="hero-ctas">
+        <button class="btn-primary ripple-btn" onclick="scrollToSection('shop')">
+          Explore Shop
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+        <button class="btn-secondary ripple-btn" onclick="scrollToSection('why-choose-us')">Learn More</button>
+      </div>
+
+      <!-- Auto-sliding Premium Image Banner -->
+      <div class="banner-container">
+        <div class="slider" id="hero-slider">
+          <!-- Slide 1 -->
+          <div class="slide active">
+            <img src="/assets/three_hearts banner.png" alt="Handmade Woolen flatlay Banner">
+            <div class="slide-overlay">
+              <h3>Warmth & Family Bonding</h3>
+              <p>Every piece knitted with love to share warmth among loved ones.</p>
+            </div>
+          </div>
+          <!-- Slide 2 -->
+          <div class="slide">
+            <img src="/assets/creamy_bow.jpeg" alt="Pink hair band closeup">
+            <div class="slide-overlay">
+              <h3>Merino Blend Comfort</h3>
+              <p>Hand-knitted items designed to look elegant and feel incredibly cozy.</p>
+            </div>
+          </div>
+          <!-- Slide 3 -->
+          <div class="slide">
+            <img src="/assets/white_rose.jpeg" alt="Lavender ribbed hairband">
+            <div class="slide-overlay">
+              <h3>Unique Boutique Styling</h3>
+              <p>One-of-a-kind pastel designs made by hand, just for you.</p>
+            </div>
+          </div>
+        </div>
+        <div class="slider-dots" id="slider-dots">
+          <span class="dot active" data-index="0"></span>
+          <span class="dot" data-index="1"></span>
+          <span class="dot" data-index="2"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Collections Section -->
+    <section class="featured-section" id="shop">
+      <div class="section-header">
+        <h2>Our Cozy Collections</h2>
+        <p>Browse our hand-knitted woolen hair bands. Click cards for multiple views & details.</p>
+      </div>
+      
+      <!-- Dynamically filled by script -->
+      <div class="product-grid" id="product-grid">
+        <!-- Products will load here via AJAX fetch -->
+      </div>
+    </section>
+
+    <!-- Why Choose Us Section -->
+    <section class="why-us-section" id="why-choose-us">
+      <div class="why-us-container">
+        <div class="section-header">
+          <h2>Crafted With Love, Made By Heart</h2>
+          <p>We are a small family business sharing cozy styles and warm bonding.</p>
+        </div>
+        
+        <div class="why-us-grid">
+          <!-- Card 1 -->
+          <div class="why-us-card reveal-on-scroll">
+            <div class="why-us-icon-wrapper">
+              <!-- Heart hands / love SVG icon -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+            <h3>Handmade with Love</h3>
+            <p>Every piece is individually hand-knitted, pouring our heart into every stitch.</p>
+          </div>
+          <!-- Card 2 -->
+          <div class="why-us-card reveal-on-scroll">
+            <div class="why-us-icon-wrapper">
+              <!-- Comfortable/warm SVG icon -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.18 19.58 10.54 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+              </svg>
+            </div>
+            <h3>Cozy & Comfortable</h3>
+            <p>Made with ultra-soft merino and baby acrylic wool. Feels light, snug, and extremely warm.</p>
+          </div>
+          <!-- Card 3 -->
+          <div class="why-us-card reveal-on-scroll">
+            <div class="why-us-icon-wrapper">
+              <!-- Unique designs / creativity SVG -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/>
+              </svg>
+            </div>
+            <h3>Unique Designs</h3>
+            <p>Featuring custom twist cables, floral crochet overlays, and pastel styles you won't find in stores.</p>
+          </div>
+          <!-- Card 4 -->
+          <div class="why-us-card reveal-on-scroll">
+            <div class="why-us-icon-wrapper">
+              <!-- Quality materials / cert SVG -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 15l-4-4 1.41-1.41L10 13.17l5.59-5.59L17 9l-7 7z"/>
+              </svg>
+            </div>
+            <h3>Quality Materials</h3>
+            <p>We source only high-grade wool blend skeins. Durable, non-itchy, and completely hand-washable.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+      <div class="section-header">
+        <h2>Warm Family Stories</h2>
+        <p>Hear from families who wear Three_Hearts with cozy joy.</p>
+      </div>
+      
+      <div class="testimonial-slider-container">
+        <!-- Slide 1 -->
+        <div class="testimonial-slide active">
+          <p class="testimonial-quote">"I bought matching pastel pink bands for me and my 5-year-old daughter. The fabric is incredibly soft and stretchable! It kept her warm during our cold mornings, and we got so many compliments on our matchy look. Thank you!"</p>
+          <div class="testimonial-author">Prisha Sharma & Daughter</div>
+        </div>
+        <!-- Slide 2 -->
+        <div class="testimonial-slide">
+          <p class="testimonial-quote">"The Blossom Dream hair band is an absolute work of art. The crochet details look so elegant! I love that I can support a family-run handmade boutique that builds things with this level of premium care."</p>
+          <div class="testimonial-author">Anjali Nair</div>
+        </div>
+        <!-- Slide 3 -->
+        <div class="testimonial-slide">
+          <p class="testimonial-quote">"Most woolen hairbands make my head scratchy, but Three_Hearts merino-blend feels like a warm cloud. The cable design is gorgeous and holds its shape after hand-washing. I've bought three colors!"</p>
+          <div class="testimonial-author">Devika R.</div>
+        </div>
+      </div>
+      
+      <div class="testimonial-dots" id="testimonial-dots">
+        <span class="t-dot active" data-index="0"></span>
+        <span class="t-dot" data-index="1"></span>
+        <span class="t-dot" data-index="2"></span>
+      </div>
+    </section>
+
+    <!-- Instagram-style Gallery -->
+    <section class="instagram-section">
+      <div class="section-header">
+        <h2>Instagram Vibe</h2>
+        <p>Follow our cozy journey online @ThreeHearts_Handmades</p>
+      </div>
+      <div class="insta-grid">
+        <div class="insta-item">
+          <img src="/assets/red_rose.jpeg" alt="Insta-post 1">
+          <div class="insta-overlay"><span>💖</span></div>
+        </div>
+        <div class="insta-item">
+          <img src="/assets/Sunflower_delight.jpeg" alt="Insta-post 2">
+          <div class="insta-overlay"><span>🌸</span></div>
+        </div>
+        <div class="insta-item">
+          <img src="/assets/yellow_bow.jpeg" alt="Insta-post 3">
+          <div class="insta-overlay"><span>🧶</span></div>
+        </div>
+        <div class="insta-item">
+          <img src="/assets/white_elegent.jpeg" alt="Insta-post 4">
+          <div class="insta-overlay"><span>🏡</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact & Direct Inquiry Section -->
+    <section class="contact-section" id="contact">
+      <div class="contact-container">
+        <div class="contact-info">
+          <h2>Get in Touch</h2>
+          <p>Have questions about sizes, colors, or bulk orders? Feel free to contact our family boutique directly. We love interacting with our customers!</p>
+          
+          <ul class="contact-details-list">
+            <li>
+              <div class="contact-icon-box">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                </svg>
+              </div>
+              <div class="contact-text-box">
+                <h4>WhatsApp Support</h4>
+                <p>+91 70100 85235 (10:00 AM - 8:00 PM)</p>
+              </div>
+            </li>
+            <li>
+              <div class="contact-icon-box">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+              </div>
+              <div class="contact-text-box">
+                <h4>Email Inbox</h4>
+                <p>ganeshjeyakumark@gmail.com</p>
+              </div>
+            </li>
+            <li>
+              <div class="contact-icon-box">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </div>
+              <div class="contact-text-box">
+                <h4>Location</h4>
+                <p>13/2 Perumal north car street,Tirunelveli - Junction</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Quick Contact Message Form (which will trigger a direct Whatsapp prefilled redirect) -->
+        <div class="contact-form">
+          <h3>Leave a Message</h3>
+          <form id="contact-message-form">
+            <div class="form-group">
+              <label for="c-name">Your Name</label>
+              <input type="text" id="c-name" class="form-control" placeholder="e.g. Priyan" required>
+            </div>
+            <div class="form-group">
+              <label for="c-msg">Message</label>
+              <textarea id="c-msg" class="form-control" placeholder="Ask us anything about colors, custom styling, or orders..." required></textarea>
+            </div>
+            <button type="submit" class="btn-form-submit ripple-btn">
+              Send WhatsApp Message
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Product Detail Modal Popup -->
+  <div class="modal-overlay" id="product-detail-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeModal('product-detail-modal')">&times;</button>
+      <div class="product-popup-layout">
+        <!-- Gallery component -->
+        <div class="popup-image-gallery">
+          <div class="popup-main-img-wrapper">
+            <img src="/assets/creamy_bow.jpeg" id="popup-main-image" alt="Product Image Main">
+          </div>
+          <div class="popup-thumbnails" id="popup-thumbnails-container">
+            <!-- Thumbnails inserted dynamically -->
+          </div>
+        </div>
+        <!-- Specs and selection -->
+        <div class="popup-details">
+          <div>
+            <h2 class="popup-title" id="popup-title">Product Model</h2>
+            <div class="popup-price" id="popup-price" style="display: none;">₹299</div>
+            <p class="popup-description" id="popup-description">Detailed cozy description goes here.</p>
+          </div>
+          
+          <div class="popup-options">
+            <!-- Color Selector -->
+            <div class="option-group">
+              <span class="option-label">Select Color:</span>
+              <div class="color-radio-group" id="popup-colors-container">
+                <!-- Radio options injected dynamically -->
+              </div>
+            </div>
+            
+            <!-- Quantity Selector -->
+            <div class="option-group">
+              <span class="option-label">Quantity:</span>
+              <div class="quantity-selector">
+                <button class="qty-btn" type="button" onclick="adjustQty(-1)">&minus;</button>
+                <input type="number" id="popup-qty" class="qty-input" value="1" min="1" readonly>
+                <button class="qty-btn" type="button" onclick="adjustQty(1)">&plus;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Delivery Cost Breakdown -->
+          <div class="pricing-breakdown-card">
+            <div class="price-row">
+              <span>Subtotal:</span>
+              <span id="popup-subtotal">₹0</span>
+            </div>
+            <div class="price-row">
+              <span>Delivery Charge:</span>
+              <span id="popup-delivery">₹0</span>
+            </div>
+            <div class="price-row total-row">
+              <span>Total Amount:</span>
+              <span id="popup-total">₹0</span>
+            </div>
+            <div class="delivery-note">
+              🚚 Orders above ₹75 get reduced delivery charges!
+            </div>
+          </div>
+          
+          <button class="btn-popup-order ripple-btn" id="popup-order-btn">
+            Order This Model 💖
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer Reviews Moderated Segment -->
+      <hr class="modal-divider">
+      <div class="product-reviews-section">
+        <div class="reviews-header">
+          <h3>Customer Reviews</h3>
+          <div class="average-rating-display">
+            <span id="popup-avg-rating">0.0</span>
+            <div class="avg-stars-container">
+              <div class="stars-outer">
+                <div class="stars-inner" id="popup-avg-stars"></div>
+              </div>
+            </div>
+            <span id="popup-reviews-count">(0 reviews)</span>
+          </div>
+        </div>
+
+        <!-- Approved Reviews Feed -->
+        <div class="reviews-list" id="popup-reviews-list">
+          <p class="no-reviews-msg">No reviews yet. Be the first to share your love! ❤️</p>
+        </div>
+
+        <!-- Write a Review Form -->
+        <div class="add-review-form-container">
+          <h4>Write a Product Review</h4>
+          <form id="submit-review-form">
+            <input type="hidden" id="review-product-name">
+            <div class="review-form-row">
+              <div class="form-group">
+                <label for="r-name">Your Name</label>
+                <input type="text" id="r-name" class="form-control" placeholder="e.g. Priya" required>
+              </div>
+              <div class="form-group star-input-group">
+                <label>Your Rating</label>
+                <div class="star-rating-select" id="star-selector">
+                  <span class="star" data-value="1">★</span>
+                  <span class="star" data-value="2">★</span>
+                  <span class="star" data-value="3">★</span>
+                  <span class="star" data-value="4">★</span>
+                  <span class="star" data-value="5">★</span>
+                </div>
+                <input type="hidden" id="r-rating" value="5" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="r-text">Your Review Message</label>
+              <textarea id="r-text" class="form-control" placeholder="Tell others what you love about this handmade hairband..." rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn-submit-review ripple-btn">Submit Review (Pending Approval)</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Order Form Modal Popup -->
+  <div class="modal-overlay" id="order-form-modal">
+    <div class="modal-content" style="max-width: 550px;">
+      <button class="modal-close-btn" onclick="closeModal('order-form-modal')">&times;</button>
+      <h3 class="order-modal-title">Complete Your Order</h3>
+      <p class="order-modal-subtitle">We will log your order, sync to Google Sheets, notify the admin, and redirect you to WhatsApp for direct chat!</p>
+      
+      <!-- Order Summary Card with delivery details -->
+      <div class="order-summary-box" style="flex-direction: column; align-items: stretch; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(142, 96, 112, 0.2); padding-bottom: 8px; margin-bottom: 4px;">
+          <div class="summary-details">
+            <h4 id="summary-product-name">Product Model</h4>
+            <p id="summary-product-meta">Color: Pink | Qty: 1</p>
+          </div>
+        </div>
+        <div class="summary-breakdown">
+          <div style="display: flex; justify-content: space-between; font-size: 0.88rem; opacity: 0.85; margin-bottom: 2px;">
+            <span>Subtotal:</span>
+            <span id="summary-subtotal">₹0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.88rem; opacity: 0.85; margin-bottom: 2px;">
+            <span>Delivery Charge:</span>
+            <span id="summary-delivery">₹0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.15rem; color: var(--primary-plum); border-top: 1px solid rgba(142, 96, 112, 0.15); padding-top: 6px; margin-top: 4px;">
+            <span>Total Amount:</span>
+            <span id="summary-total-price">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <form id="order-submit-form">
+        <!-- Hidden/stored inputs for items -->
+        <input type="hidden" id="order-item-id">
+        <input type="hidden" id="order-item-color">
+        <input type="hidden" id="order-item-qty">
+        <input type="hidden" id="order-item-delivery">
+        
+        <div class="order-form-grid">
+          <div class="form-group form-group-full">
+            <label for="o-name">Full Name</label>
+            <input type="text" id="o-name" class="form-control" placeholder="e.g. Ganesh Kumar" required>
+          </div>
+          <div class="form-group form-group-full">
+            <label for="o-phone">Phone Number</label>
+            <input type="tel" id="o-phone" class="form-control" placeholder="e.g. +91 70100 85235" required>
+          </div>
+          <div class="form-group form-group-full">
+            <label for="o-address">Delivery Address</label>
+            <textarea id="o-address" class="form-control" placeholder="House/Flat No, Street, City, State, Pincode" required></textarea>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn-popup-order ripple-btn" style="margin-top: 25px;">
+          Submit Order & Chat on WhatsApp 💬
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h3>Three_Hearts Handmades</h3>
+        <p>"Crafted with Love, Made by Heart"</p>
+        <p>A family-run boutique creating beautiful, comfy woolen accessories to keep you warm and cozy.</p>
+        <div class="social-links">
+          <a href="#" class="social-icon" aria-label="Facebook">
+            <svg viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.6L18 8h-3V6.5c0-.8.7-1.5 1.5-1.5h1.5V2h-3c-2.8 0-5 2.2-5 5V8z"/></svg>
+          </a>
+          <a href="#" class="social-icon" aria-label="Instagram">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </a>
+          <a href="#" class="social-icon" aria-label="Pinterest">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.27 2.68 7.9 6.46 9.38-.08-.8-.16-2.02.03-2.9l.52-2.22s-.13-.27-.13-.67c0-.63.36-1.1.8-1.1.38 0 .57.29.57.63 0 .38-.24.96-.37 1.5-.1.44.22.8.66.8.8 0 1.4-1.02 1.4-2.22 0-1.03-.68-1.78-1.85-1.78-1.36 0-2.22 1.02-2.22 2.16 0 .4.12.7.3.92.08.1.1.15.07.26l-.11.45c-.04.14-.13.18-.28.1-.95-.39-1.39-1.46-1.39-2.66 0-2.18 1.84-4.8 5.48-4.8 2.92 0 4.88 2.1 4.88 4.43 0 3.02-1.68 5.3-4.14 5.3-.83 0-1.62-.45-1.89-.97l-.52 1.98c-.18.72-.55 1.43-.88 1.96C10.08 21.84 11.02 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+          </a>
+        </div>
+      </div>
+      
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <ul class="footer-links">
+          <li><a href="#" onclick="scrollToSection('home')">Home</a></li>
+          <li><a href="#shop" onclick="scrollToSection('shop')">Shop Products</a></li>
+          <li><a href="#why-choose-us" onclick="scrollToSection('why-choose-us')">Why Choose Us</a></li>
+          <li><a href="#testimonials" onclick="scrollToSection('testimonials')">Stories</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Shipping Details</a></li>
+          <li><a href="#">Returns Info</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul class="footer-links">
+          <li><a href="#contact">Contact Support</a></li>
+          <li><a href="#">Care Instructions</a></li>
+          <li><a href="#">FAQs</a></li>
+          <li><a href="/admin.html" style="font-weight: 600; color: var(--pastel-pink);">Admin Portal</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-copyright">
+      <p>&copy; 2026 Three_Hearts Handmades. All Rights Reserved. Crafted with 💖</p>
+      <p>Made by <a href="#" target="_blank">Three_Hearts Family</a></p>
+    </div>
+  </footer>
+
+  <!-- Admin trigger invisible hot-area (floating secret) -->
+  <div class="admin-trigger-indicator" onclick="window.location.href='/admin.html'" title="Admin Mode Access"></div>
+
+  <!-- JavaScript Scripts -->
+  <script src="/js/main.js"></script>
+</body>
+</html>

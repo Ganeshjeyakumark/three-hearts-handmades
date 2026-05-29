@@ -1,0 +1,78 @@
+[
+  {
+    "id": "6",
+    "name": "Yellow bow",
+    "price": 25,
+    "description": "comfy looks",
+    "colors": [
+      "Yellow",
+      "red"
+    ],
+    "images": [
+      "/uploads/1779783753482-843375347.jpeg"
+    ]
+  },
+  {
+    "id": "7",
+    "name": "Sunflower Delight",
+    "price": 25,
+    "description": "suites every wears",
+    "colors": [
+      "Yellow"
+    ],
+    "images": [
+      "/uploads/1779805912764-293657127.jpeg"
+    ]
+  },
+  {
+    "id": "8",
+    "name": "CREAMY BOW",
+    "price": 25,
+    "description": "GENZ VIBES",
+    "colors": [
+      "Cream",
+      "Red",
+      "Black"
+    ],
+    "images": [
+      "/uploads/1780067906910-201879593.jpeg"
+    ]
+  },
+  {
+    "id": "9",
+    "name": "CUTIE CLIPS",
+    "price": 25,
+    "description": "LOOKS DAMN CUTE",
+    "colors": [
+      "Yellow",
+      "red"
+    ],
+    "images": [
+      "/uploads/1780067967702-610295068.jpeg"
+    ]
+  },
+  {
+    "id": "10",
+    "name": "FRIL BAND",
+    "price": 20,
+    "description": "SIMPLE AND SPECIAL",
+    "colors": [
+      "PINK"
+    ],
+    "images": [
+      "/uploads/1780068057279-809262917.jpeg"
+    ]
+  },
+  {
+    "id": "11",
+    "name": "PANDA KEYCHAIN",
+    "price": 50,
+    "description": "YOUR CUTE PARTNER",
+    "colors": [
+      "BLACK"
+    ],
+    "images": [
+      "/uploads/1780068133128-825792372.png"
+    ]
+  }
+]

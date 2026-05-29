@@ -1,0 +1,39 @@
+[
+  {
+    "id": "init_rev_2",
+    "customerName": "Devika",
+    "productName": "Blossom Dream",
+    "rating": 4,
+    "review": "Very soft merino blend wool. Keeps me warm during chilly mornings and doesn't flatten my hair at all. Highly recommended!",
+    "approved": true,
+    "createdAt": "2026-05-22T08:15:00.000Z"
+  },
+  {
+    "id": "init_rev_3",
+    "customerName": "Aarav",
+    "productName": "Cozy Cable",
+    "rating": 5,
+    "review": "Bought matching headwraps for my wife and daughter. They both look so adorable and feel extremely cozy. Perfect for our family bonding moments! 🧶🏡",
+    "approved": true,
+    "createdAt": "2026-05-24T14:45:00.000Z"
+  },
+  {
+    "id": "init_rev_4",
+    "customerName": "Meera",
+    "productName": "Lavender Fields",
+    "rating": 5,
+    "review": "The lavender hue is absolutely gorgeous and so calming. This is the softest ribbed headband I've ever owned. Feels like a warm cloud on my ears!",
+    "approved": true,
+    "createdAt": "2026-05-25T11:20:00.000Z"
+  },
+  {
+    "id": "1779858571231",
+    "customerName": "ganesh",
+    "productName": "Yellow bow",
+    "rating": 5,
+    "review": "very much comfortable to wear and suites every occasion",
+    "approved": true,
+    "createdAt": "2026-05-27T05:09:31.180Z",
+    "rejected": false
+  }
+]

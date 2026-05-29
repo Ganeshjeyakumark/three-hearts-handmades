@@ -1,0 +1,28 @@
+
+========================================
+ORDER LOGGED (GOOGLE SHEETS FALLBACK)
+Date & Time: 26/5/2026, 1:19:59 pm
+----------------------------------------
+Name: Ganesh Jeya Kumar
+Phone: 8610059074
+Address: 13/2 perumal north car street,
+Tirunelveli-junction
+Product Model: Sunflower Delight
+Quantity: 1
+Color: Yellow
+========================================
+
+
+========================================
+ORDER LOGGED (GOOGLE SHEETS FALLBACK)
+Date & Time: 26/5/2026, 1:35:26 pm
+----------------------------------------
+Name: Ganesh Jeya Kumar
+Phone: 8610059074
+Address: 13/2 perumal north car street,
+Tirunelveli-junction
+Product Model: Sunflower Delight
+Quantity: 1
+Color: Yellow
+========================================
+
