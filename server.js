@@ -105,30 +105,46 @@ function writeReviews(reviews) {
 // Google Sheets Configuration
 let sheetsClient = null;
 const spreadsheetId = process.env.SPREADSHEET_ID;
-const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ? path.resolve(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS) : null;
 
 // Initialize Google Sheets API client dynamically
 function initGoogleSheets() {
   const currentSpreadsheetId = process.env.SPREADSHEET_ID;
-  const currentKeyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ? path.resolve(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS) : null;
 
-  if (!currentSpreadsheetId || currentSpreadsheetId.trim() === '' || currentSpreadsheetId === 'your_google_spreadsheet_id_here') {
-    console.warn('[Google Sheets] SPREADSHEET_ID not configured or set to placeholder in .env. Running in local fallback mode.');
+  if (
+    !currentSpreadsheetId ||
+    currentSpreadsheetId.trim() === '' ||
+    currentSpreadsheetId === 'your_google_spreadsheet_id_here'
+  ) {
+    console.warn('[Google Sheets] SPREADSHEET_ID not configured.');
     return null;
   }
-  if (!currentKeyPath || !fs.existsSync(currentKeyPath)) {
-    console.warn(`[Google Sheets] Credentials JSON file not found at: ${currentKeyPath || 'unconfigured'}. Running in local fallback mode.`);
+
+  if (
+    !process.env.GOOGLE_CLIENT_EMAIL ||
+    !process.env.GOOGLE_PRIVATE_KEY
+  ) {
+    console.warn('[Google Sheets] GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY missing.');
     return null;
   }
+
   try {
     const auth = new google.auth.GoogleAuth({
-      keyFile: currentKeyPath,
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      },
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
-    console.log('[Google Sheets] Authorized service account successfully.');
-    return google.sheets({ version: 'v4', auth });
+
+    console.log('[Google Sheets] Authorized successfully.');
+
+    return google.sheets({
+      version: 'v4',
+      auth
+    });
+
   } catch (error) {
-    console.error('[Google Sheets] Failed to authorize API:', error.message);
+    console.error('[Google Sheets] Failed:', error.message);
     return null;
   }
 }
@@ -289,7 +305,7 @@ Color: ${color}
 ========================================
 \n`;
   try {
-    fs.appendFileSync(fallbackFilePath, logEntry, 'utf8');
+    console.log(logEntry);
     console.log(`[Local Fallback] Appended order details locally to: data/orders_fallback.txt`);
   } catch (err) {
     console.error('[Local Fallback Error] Failed to write local order file:', err.message);
@@ -590,7 +606,7 @@ Quantity: ${quantity}
 Color: ${color}
 ========================================
 \n`;
-      fs.appendFileSync(mockEmailsFilePath, emailLog, 'utf8');
+      console.log(emailLog);
       console.warn(`[SMTP NOT CONFIGURED] Simulated email order details appended to 'data/mock_emails.txt'`);
     }
 
