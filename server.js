@@ -6,6 +6,7 @@ const multer = require('multer');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 require('dotenv').config();
 
 const app = express();
@@ -376,17 +377,24 @@ function writeProducts(products) {
   }
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+const upload = multer({
+  storage: multer.memoryStorage()
 });
+function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'three-hearts-products'
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
 
-const upload = multer({ storage });
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+}
 
 
 // API: Get all products
@@ -396,7 +404,7 @@ app.get('/api/products', (req, res) => {
 });
 
 // API: Add a new product
-app.post('/api/products', upload.array('images', 5), (req, res) => {
+app.post('/api/products', upload.array('images', 5), async (req, res) => {
   try {
     const { name, price, description, colors } = req.body;
     if (!name || !price) {
@@ -407,12 +415,11 @@ app.post('/api/products', upload.array('images', 5), (req, res) => {
     const newId = products.length > 0 ? (Math.max(...products.map(p => parseInt(p.id) || 0)) + 1).toString() : "1";
 
     // Handle uploaded files
-    const imageUrls = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        imageUrls.push(file.path);
-      });
-    }
+    let imageUrls = [];
+   for (const file of req.files) {
+  const result = await uploadToCloudinary(file.buffer);
+  imageUrls.push(result.secure_url);
+}
 
     const parsedColors = Array.isArray(colors) ? colors : (colors ? colors.split(',').map(c => c.trim()) : []);
 
@@ -436,7 +443,7 @@ app.post('/api/products', upload.array('images', 5), (req, res) => {
 });
 
 // API: Edit a product
-app.put('/api/products/:id', upload.array('images', 5), (req, res) => {
+app.put('/api/products/:id', upload.array('images', 5), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, price, description, colors, existingImages } = req.body;
@@ -455,12 +462,10 @@ app.put('/api/products/:id', upload.array('images', 5), (req, res) => {
     }
 
     // Append new uploaded images
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        imageUrls.push(file.path);
-      });
-    }
-
+    for (const file of req.files) {
+  const result = await uploadToCloudinary(file.buffer);
+  imageUrls.push(result.secure_url);
+}
     const parsedColors = Array.isArray(colors) ? colors : (colors ? colors.split(',').map(c => c.trim()) : []);
 
     products[index] = {
