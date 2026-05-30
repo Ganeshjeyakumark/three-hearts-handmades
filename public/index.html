@@ -48,6 +48,10 @@
       <li><a href="#contact" class="nav-link-item">Contact Us</a></li>
     </ul>
     <div class="nav-actions">
+      <!-- Premium Shopping Cart Button -->
+      <button class="btn-cart-trigger ripple-btn" id="header-cart-btn" onclick="toggleCartDrawer(true)" aria-label="View Cart">
+        🛒 Cart <span id="cart-badge-count" class="cart-badge">0</span>
+      </button>
       <button class="btn-header-order ripple-btn" id="header-shop-btn">Order Now</button>
       <div class="menu-toggle" id="menu-toggle">
         <span></span>
@@ -431,17 +435,18 @@
     <div class="modal-content" style="max-width: 550px;">
       <button class="modal-close-btn" onclick="closeModal('order-form-modal')">&times;</button>
       <h3 class="order-modal-title">Complete Your Order</h3>
-      <p class="order-modal-subtitle">We will log your order, sync to Google Sheets, notify the admin, and redirect you to WhatsApp for direct chat!</p>
+      <p class="order-modal-subtitle">We will log your consolidated order, sync to Google Sheets, notify the admin, and redirect you to WhatsApp for direct chat!</p>
       
       <!-- Order Summary Card with delivery details -->
       <div class="order-summary-box" style="flex-direction: column; align-items: stretch; gap: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(142, 96, 112, 0.2); padding-bottom: 8px; margin-bottom: 4px;">
-          <div class="summary-details">
-            <h4 id="summary-product-name">Product Model</h4>
-            <p id="summary-product-meta">Color: Pink | Qty: 1</p>
-          </div>
+        <h4 style="color: var(--primary-plum); font-family: var(--font-serif); border-bottom: 1px solid rgba(142, 96, 112, 0.15); padding-bottom: 6px; margin-bottom: 4px;">Order Summary</h4>
+        
+        <!-- Dynamic list of items in checkout order -->
+        <div class="checkout-items-list" id="checkout-items-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;">
+          <!-- Dynamically populated checkout list -->
         </div>
-        <div class="summary-breakdown">
+
+        <div class="summary-breakdown" style="border-top: 1px dashed rgba(142, 96, 112, 0.2); padding-top: 8px;">
           <div style="display: flex; justify-content: space-between; font-size: 0.88rem; opacity: 0.85; margin-bottom: 2px;">
             <span>Subtotal:</span>
             <span id="summary-subtotal">₹0</span>
@@ -458,12 +463,6 @@
       </div>
 
       <form id="order-submit-form">
-        <!-- Hidden/stored inputs for items -->
-        <input type="hidden" id="order-item-id">
-        <input type="hidden" id="order-item-color">
-        <input type="hidden" id="order-item-qty">
-        <input type="hidden" id="order-item-delivery">
-        
         <div class="order-form-grid">
           <div class="form-group form-group-full">
             <label for="o-name">Full Name</label>
@@ -545,6 +544,40 @@
 
   <!-- Admin trigger invisible hot-area (floating secret) -->
   <div class="admin-trigger-indicator" onclick="window.location.href='/admin.html'" title="Admin Mode Access"></div>
+
+  <!-- Sliding Shopping Cart Sidebar Drawer -->
+  <div class="cart-overlay" id="cart-overlay" onclick="toggleCartDrawer(false)"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>🛒 Cozy Shopping Cart</h3>
+      <button class="cart-close-btn" onclick="toggleCartDrawer(false)" aria-label="Close Cart">&times;</button>
+    </div>
+    <div class="cart-items-container" id="cart-items-container">
+      <!-- Cart items will be loaded dynamically -->
+    </div>
+    <div class="cart-drawer-footer" id="cart-drawer-footer">
+      <div class="cart-summary-card">
+        <div class="summary-line">
+          <span>Subtotal:</span>
+          <span id="cart-subtotal">₹0</span>
+        </div>
+        <div class="summary-line">
+          <span>Delivery Charge:</span>
+          <span id="cart-delivery">₹0</span>
+        </div>
+        <div class="summary-line total">
+          <span>Grand Total:</span>
+          <span id="cart-grand-total">₹0</span>
+        </div>
+      </div>
+      <button class="btn-checkout ripple-btn" onclick="openCheckoutModal()">
+        Proceed to Checkout 💖
+      </button>
+    </div>
+  </div>
+
+  <!-- Dynamic Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
 
   <!-- JavaScript Scripts -->
   <script src="/js/main.js"></script>

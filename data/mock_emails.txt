@@ -110,3 +110,20 @@ Quantity: 2
 Color: Yellow
 ========================================
 
+
+========================================
+NEW ORDER EMAIL NOTIFICATION (CONSOLIDATED)
+Timestamp: 30/5/2026, 7:58:26 pm
+To: ganeshjeyakumark@gmail.com
+Subject: 💖 New Consolidated Order from Subha - Three_Hearts Handmades
+----------------------------------------
+Name: Subha
+Phone: 9342838140
+Address: 13/1 perumal north car st;
+tirunelveli- junction
+Products: Yellow bow x1 (Yellow),  Sunflower Delight x1 (Yellow),  CUTIE CLIPS x1 (Yellow)
+Subtotal: ₹75
+Delivery Charge: ₹25
+Grand Total: ₹100
+========================================
+

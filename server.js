@@ -119,22 +119,31 @@ function initGoogleSheets() {
     return null;
   }
 
-  if (
-    !process.env.GOOGLE_CLIENT_EMAIL ||
-    !process.env.GOOGLE_PRIVATE_KEY
-  ) {
-    console.warn('[Google Sheets] GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY missing.');
+  const hasEnvCredentials = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
+  const keyFilePath = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'google-credentials.json';
+  const hasKeyFile = fs.existsSync(path.resolve(__dirname, keyFilePath));
+
+  if (!hasEnvCredentials && !hasKeyFile) {
+    console.warn('[Google Sheets] Neither GOOGLE_CLIENT_EMAIL/GOOGLE_PRIVATE_KEY nor key file config exists.');
     return null;
   }
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
+    let auth;
+    if (hasEnvCredentials) {
+      auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: process.env.GOOGLE_CLIENT_EMAIL,
+          private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        },
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
+      });
+    } else {
+      auth = new google.auth.GoogleAuth({
+        keyFile: path.resolve(__dirname, keyFilePath),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
+      });
+    }
 
     console.log('[Google Sheets] Authorized successfully.');
 
@@ -160,6 +169,8 @@ async function ensureOrdersSheet(sheets) {
     const sheetsList = spreadsheet.data.sheets || [];
     const ordersSheetExists = sheetsList.some(s => s.properties.title === 'Orders');
     
+    const headers = ['Customer Name', 'Phone Number', 'Address', 'Products', 'Subtotal', 'Delivery Charge', 'Grand Total', 'Date & Time'];
+
     if (!ordersSheetExists) {
       console.log("[Google Sheets] 'Orders' tab not found. Creating it...");
       // Add sheet
@@ -179,16 +190,37 @@ async function ensureOrdersSheet(sheets) {
       });
       
       // Set Header Columns
-      const headers = ['Customer Name', 'Phone Number', 'Address', 'Product Model', 'Quantity', 'Color', 'Date & Time'];
       await sheets.spreadsheets.values.update({
         spreadsheetId: currentSpreadsheetId,
-        range: 'Orders!A1:G1',
+        range: 'Orders!A1:H1',
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [headers]
         }
       });
-      console.log("[Google Sheets] Created 'Orders' tab and wrote columns headers successfully.");
+      console.log("[Google Sheets] Created 'Orders' tab and wrote column headers successfully.");
+    } else {
+      // Self-healing check: check if headers match the new e-commerce layout
+      try {
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: currentSpreadsheetId,
+          range: 'Orders!A1:H1'
+        });
+        const currentHeaders = response.data.values ? response.data.values[0] : [];
+        if (!currentHeaders.includes('Products')) {
+          console.log("[Google Sheets] Upgrading existing 'Orders' sheet headers to e-commerce format...");
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: currentSpreadsheetId,
+            range: 'Orders!A1:H1',
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+              values: [headers]
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('[Google Sheets] Failed to check or upgrade existing headers:', err.message);
+      }
     }
   } catch (error) {
     console.error('[Google Sheets] Error ensuring Orders tab exists:', error.message);
@@ -290,7 +322,7 @@ async function updateSheetReviewStatus(sheets, customerName, productName, review
 }
 
 // Local Fallback order logger
-function saveToLocalFallback(name, phone, address, productModel, quantity, color, formattedDate) {
+function saveToLocalFallback(name, phone, address, productsStr, subtotal, deliveryCharge, grandTotal, formattedDate) {
   const logEntry = `
 ========================================
 ORDER LOGGED (GOOGLE SHEETS FALLBACK)
@@ -299,13 +331,14 @@ Date & Time: ${formattedDate}
 Name: ${name}
 Phone: ${phone}
 Address: ${address}
-Product Model: ${productModel}
-Quantity: ${quantity}
-Color: ${color}
+Products: ${productsStr.replace(/\n/g, ' ')}
+Subtotal: ₹${subtotal}
+Delivery Charge: ₹${deliveryCharge}
+Grand Total: ₹${grandTotal}
 ========================================
 \n`;
   try {
-    console.log(logEntry);
+    fs.appendFileSync(path.join(__dirname, 'data', 'orders_fallback.txt'), logEntry, 'utf8');
     console.log(`[Local Fallback] Appended order details locally to: data/orders_fallback.txt`);
   } catch (err) {
     console.error('[Local Fallback Error] Failed to write local order file:', err.message);
@@ -474,14 +507,19 @@ app.delete('/api/products/:id', (req, res) => {
 // API: Place an order (saves to Google Sheets + emails admin)
 app.post('/api/orders', async (req, res) => {
   try {
-    const { name, phone, address, productModel, quantity, color } = req.body;
+    const { name, phone, address, products, subtotal, deliveryCharge, grandTotal } = req.body;
 
-    if (!name || !phone || !address || !productModel || !quantity || !color) {
-      return res.status(400).json({ error: 'All fields are required' });
+    if (!name || !phone || !address || !products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: 'All order fields and cart items are required' });
     }
 
     const orderDate = new Date();
     const formattedDate = orderDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    // Format products string for Sheets: e.g. "Cutie Clips x2 (Yellow), Fril Band x1 (Pink)"
+    const productsStr = products
+      .map(p => `${p.name} x${p.quantity}` + (p.color ? ` (${p.color})` : ''))
+      .join(', \n');
 
     // 1. SAVE TO GOOGLE SHEETS (with Local Fallback)
     if (!sheetsClient) {
@@ -496,28 +534,53 @@ app.post('/api/orders', async (req, res) => {
         await ensureOrdersSheet(sheetsClient);
 
         const currentSpreadsheetId = process.env.SPREADSHEET_ID;
-        // Append row to the "Orders" tab
+        // Append row to the "Orders" tab (8 columns: Name, Phone, Address, Products, Subtotal, Delivery, Grand Total, Time)
         await sheetsClient.spreadsheets.values.append({
           spreadsheetId: currentSpreadsheetId,
-          range: 'Orders!A:G',
+          range: 'Orders!A:H',
           valueInputOption: 'USER_ENTERED',
           requestBody: {
-            values: [[name, phone, address, productModel, parseInt(quantity), color, formattedDate]]
+            values: [[
+              name,
+              phone,
+              address,
+              productsStr,
+              parseFloat(subtotal),
+              parseFloat(deliveryCharge),
+              parseFloat(grandTotal),
+              formattedDate
+            ]]
           }
         });
-        console.log('[Google Sheets] Order successfully pushed to sheet.');
+        console.log('[Google Sheets] Consolidated order successfully pushed to sheet.');
         savedToSheets = true;
       } catch (err) {
         console.error('[Google Sheets API Fail] Appending failed. Using local fallback logger:', err.message);
-        saveToLocalFallback(name, phone, address, productModel, quantity, color, formattedDate);
+        saveToLocalFallback(name, phone, address, productsStr, subtotal, deliveryCharge, grandTotal, formattedDate);
       }
     } else {
-      saveToLocalFallback(name, phone, address, productModel, quantity, color, formattedDate);
+      saveToLocalFallback(name, phone, address, productsStr, subtotal, deliveryCharge, grandTotal, formattedDate);
     }
 
     // 2. SEND EMAIL TO ADMIN
     const adminEmail = process.env.ADMIN_EMAIL || 'ganeshjeyakumark@gmail.com';
-    const emailSubject = `💖 New Order from ${name} - Three_Hearts Handmades`;
+    const emailSubject = `💖 New Consolidated Order from ${name} - Three_Hearts Handmades`;
+
+    let emailProductsRows = '';
+    products.forEach(p => {
+      emailProductsRows += `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; color: #4A2E35;">
+            <span style="font-weight: bold; color: #8E6070;">${p.name}</span>
+            ${p.color ? `<br><span style="font-size: 0.85em; display: inline-block; padding: 2px 6px; background-color: #E8E7F5; border-radius: 4px; color: #4A2E35; margin-top: 4px;">Color: ${p.color}</span>` : ''}
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; text-align: center; color: #4A2E35;">₹${p.price}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; text-align: center; color: #4A2E35;">x${p.quantity}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; text-align: right; font-weight: bold; color: #8E6070;">₹${p.price * p.quantity}</td>
+        </tr>
+      `;
+    });
+
     const emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FFE5EC; border-radius: 12px; background-color: #FDF8F5;">
         <div style="text-align: center; border-bottom: 2px solid #FFE5EC; padding-bottom: 15px; margin-bottom: 20px;">
@@ -525,41 +588,42 @@ app.post('/api/orders', async (req, res) => {
           <p style="font-style: italic; color: #B38E9B; margin: 5px 0 0 0;">"Crafted with Love, Made by Heart"</p>
         </div>
         <h3 style="color: #4A2E35;">New Order Received! 💖</h3>
-        <p>A customer has placed an order on your handmade boutique website. Below are the order details:</p>
+        <p>A customer has placed a multi-product order on your handmade boutique website. Below are the order details:</p>
         
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-          <tr style="background-color: #FFE5EC;">
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #E8E7F5; color: #4A2E35;">Detail</th>
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #E8E7F5; color: #4A2E35;">Value</th>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Customer Name</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;">${name}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Phone Number</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;">${phone}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Address</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;">${address}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Product Model</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;">${productModel}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Quantity</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;">${quantity}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC; font-weight: bold; color: #8E6070;">Color Chosen</td>
-            <td style="padding: 12px; border-bottom: 1px solid #FFE5EC;"><span style="display: inline-block; padding: 3px 8px; background-color: #E8E7F5; border-radius: 4px; color: #4A2E35;">${color}</span></td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; font-weight: bold; color: #8E6070;">Date & Time</td>
-            <td style="padding: 12px;">${formattedDate}</td>
-          </tr>
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid #FFE5EC;">
+          <h4 style="color: #8E6070; margin-top: 0; border-bottom: 1px dashed #FFE5EC; padding-bottom: 6px; margin-bottom: 10px;">Customer Information</h4>
+          <p style="margin: 6px 0;"><strong>Name:</strong> ${name}</p>
+          <p style="margin: 6px 0;"><strong>Phone:</strong> ${phone}</p>
+          <p style="margin: 6px 0;"><strong>Address:</strong> ${address}</p>
+          <p style="margin: 6px 0;"><strong>Date & Time:</strong> ${formattedDate}</p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #FFE5EC;">
+          <thead>
+            <tr style="background-color: #FFE5EC;">
+              <th style="text-align: left; padding: 12px; color: #4A2E35;">Product</th>
+              <th style="text-align: center; padding: 12px; color: #4A2E35;">Price</th>
+              <th style="text-align: center; padding: 12px; color: #4A2E35;">Qty</th>
+              <th style="text-align: right; padding: 12px; color: #4A2E35;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${emailProductsRows}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="padding: 12px 12px 4px; text-align: right; color: #8A7278;">Subtotal:</td>
+              <td style="padding: 12px 12px 4px; text-align: right; font-weight: bold; color: #4A2E35;">₹${subtotal}</td>
+            </tr>
+            <tr>
+              <td colspan="3" style="padding: 4px 12px; text-align: right; color: #8A7278;">Delivery Charge:</td>
+              <td style="padding: 4px 12px; text-align: right; font-weight: bold; color: #4A2E35;">₹${deliveryCharge}</td>
+            </tr>
+            <tr style="border-top: 1px solid #FFE5EC;">
+              <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #8E6070; font-size: 1.1em;">Grand Total:</td>
+              <td style="padding: 12px; text-align: right; font-weight: bold; color: #8E6070; font-size: 1.1em;">₹${grandTotal}</td>
+            </tr>
+          </tfoot>
         </table>
         
         <div style="margin-top: 30px; text-align: center; border-top: 1px solid #FFE5EC; padding-top: 15px; font-size: 0.9em; color: #B38E9B;">
@@ -588,12 +652,12 @@ app.post('/api/orders', async (req, res) => {
         subject: emailSubject,
         html: emailHtml
       });
-      console.log(`Email notification successfully sent to ${adminEmail}`);
+      console.log(`Email invoice successfully sent to ${adminEmail}`);
     } else {
-      // Fallback: log to server console and a local mock file for validation/developer testing
+      // Fallback: log to server console and local mock file for developer validation
       const emailLog = `
 ========================================
-NEW ORDER EMAIL NOTIFICATION
+NEW ORDER EMAIL NOTIFICATION (CONSOLIDATED)
 Timestamp: ${formattedDate}
 To: ${adminEmail}
 Subject: ${emailSubject}
@@ -601,17 +665,19 @@ Subject: ${emailSubject}
 Name: ${name}
 Phone: ${phone}
 Address: ${address}
-Product: ${productModel}
-Quantity: ${quantity}
-Color: ${color}
+Products: ${productsStr.replace(/\n/g, ' ')}
+Subtotal: ₹${subtotal}
+Delivery Charge: ₹${deliveryCharge}
+Grand Total: ₹${grandTotal}
 ========================================
 \n`;
       console.log(emailLog);
-      console.warn(`[SMTP NOT CONFIGURED] Simulated email order details appended to 'data/mock_emails.txt'`);
+      fs.appendFileSync(path.join(__dirname, 'data', 'mock_emails.txt'), emailLog, 'utf8');
+      console.warn(`[SMTP NOT CONFIGURED] Simulated email invoice details appended to 'data/mock_emails.txt'`);
     }
 
     return res.status(201).json({
-      message: 'Order received successfully',
+      message: 'Consolidated order received successfully',
       savedToSheets,
       emailNotification: hasSmtpConfig ? 'sent' : 'simulated'
     });

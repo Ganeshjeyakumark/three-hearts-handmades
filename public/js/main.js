@@ -9,7 +9,8 @@ let APP_STATE = {
   currentQty: 1,
   activeSlide: 0,
   activeTestimonial: 0,
-  whatsAppNum: "917010085235" // Configured from .env (fallback)
+  whatsAppNum: "917010085235", // Configured from .env (fallback)
+  cart: [] // E-commerce Shopping Cart list
 };
 
 // DOM Init
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initRippleEffect();
   setupReviewStars();
   setupReviewForm();
+  loadCart(); // Load persisted cart
 });
 
 // 1. Loading Screen
@@ -324,10 +326,12 @@ function renderProducts(products) {
   grid.innerHTML = "";
 
   products.forEach((product) => {
-    // Generate colors HTML
+    // Generate color radio pill buttons HTML
     let colorsHtml = "";
+    const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0] : "Pastel Pink";
+    
     if (product.colors && product.colors.length > 0) {
-      product.colors.forEach(col => {
+      product.colors.forEach((col, idx) => {
         let dotColor = '#8E6070'; // fallback
         const lCol = col.toLowerCase();
         if (lCol.includes('pink')) dotColor = '#FFE5EC';
@@ -336,7 +340,11 @@ function renderProducts(products) {
         else if (lCol.includes('peach') || lCol.includes('orange')) dotColor = '#FCE1D4';
         else if (lCol.includes('yellow')) dotColor = '#FEF3C7';
 
-        colorsHtml += `<span class="color-dot" style="background-color: ${dotColor};" title="${col}"></span>`;
+        colorsHtml += `<button class="card-color-option-btn ${idx === 0 ? 'active' : ''}" 
+                               style="background-color: ${dotColor};" 
+                               title="${col}" 
+                               data-color="${col}"
+                               onclick="selectCardColor(this)"></button>`;
       });
     }
 
@@ -347,6 +355,10 @@ function renderProducts(products) {
     const img1 = product.images[0] || "/assets/placeholder.png";
     const img2 = product.images[1] || product.images[0] || "/assets/placeholder.png";
 
+    // Set custom card state attributes
+    card.setAttribute("data-selected-color", defaultColor);
+    card.setAttribute("data-quantity", "1");
+
     card.innerHTML = `
       <div class="product-image-wrapper" onclick="openProductPopup('${product.id}')">
         <img class="product-img-primary" src="${img1}" alt="${product.name}" loading="lazy">
@@ -355,11 +367,21 @@ function renderProducts(products) {
       </div>
       <div class="product-details">
         <h3 class="product-title" onclick="openProductPopup('${product.id}')" style="cursor: pointer;">${product.name}</h3>
-        <div class="product-colors-display">${colorsHtml}</div>
+        <div class="product-colors-display" style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
+          ${colorsHtml}
+        </div>
         <p class="product-description-snippet">${product.description}</p>
-        <div class="product-footer">
-          <div class="product-price">₹${product.price}</div>
-          <button class="btn-card-order ripple-btn" onclick="openQuickOrder('${product.id}')">Quick Order</button>
+        <div class="product-footer" style="display:flex; flex-direction:column; align-items:stretch; gap:10px; margin-top:auto; padding-top:15px; border-top:1px solid rgba(255, 229, 236, 0.5);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="product-price">₹${product.price}</div>
+            <!-- Dynamic Qty Selector inline on card -->
+            <div class="card-qty-selector">
+              <button class="card-qty-btn" type="button" onclick="adjustCardQty(this, -1)">&minus;</button>
+              <span class="card-qty-val">1</span>
+              <button class="card-qty-btn" type="button" onclick="adjustCardQty(this, 1)">&plus;</button>
+            </div>
+          </div>
+          <button class="btn-card-add-cart ripple-btn" onclick="addCardItemToCart(this, '${product.id}')">Add to Cart 🛒</button>
         </div>
       </div>
     `;
@@ -371,6 +393,50 @@ function renderProducts(products) {
       observer.observe(card);
     }, 50);
   });
+}
+
+// Inline card selection action helper: selects card active color
+function selectCardColor(element) {
+  const card = element.closest(".product-card");
+  if (!card) return;
+
+  const chosenColor = element.getAttribute("data-color");
+  card.setAttribute("data-selected-color", chosenColor);
+
+  // Toggle active rings
+  const colorBtns = card.querySelectorAll(".card-color-option-btn");
+  colorBtns.forEach(btn => btn.classList.remove("active"));
+  element.classList.add("active");
+}
+
+// Inline card selection action helper: adjusts card ordering quantity
+function adjustCardQty(element, val) {
+  const card = element.closest(".product-card");
+  if (!card) return;
+
+  const valDisplay = card.querySelector(".card-qty-val");
+  let currentQty = parseInt(card.getAttribute("data-quantity")) || 1;
+  currentQty += val;
+  if (currentQty < 1) currentQty = 1;
+
+  card.setAttribute("data-quantity", currentQty.toString());
+  valDisplay.innerText = currentQty;
+}
+
+// Inline card action callback: adds configured card config to e-commerce cart
+function addCardItemToCart(element, productId) {
+  const card = element.closest(".product-card");
+  if (!card) return;
+
+  const color = card.getAttribute("data-selected-color") || "Pastel Pink";
+  const qty = parseInt(card.getAttribute("data-quantity")) || 1;
+
+  addToCart(productId, color, qty);
+
+  // Reset card quantity view to 1
+  card.setAttribute("data-quantity", "1");
+  const qtyDisplay = card.querySelector(".card-qty-val");
+  if (qtyDisplay) qtyDisplay.innerText = "1";
 }
 
 // 7. Modals management (Details and Orders)
@@ -401,6 +467,23 @@ function openProductPopup(id) {
   document.getElementById("popup-title").innerText = product.name;
   document.getElementById("popup-description").innerText = product.description;
 
+  // Insert Stock Status Badge
+  let stockBadge = document.getElementById("popup-stock-badge");
+  if (!stockBadge) {
+    stockBadge = document.createElement("div");
+    stockBadge.id = "popup-stock-badge";
+    document.getElementById("popup-title").after(stockBadge);
+  }
+  
+  // Custom organic Stock Status logic
+  if (product.id === "9" || product.id === "10") {
+    stockBadge.className = "stock-status-badge low";
+    stockBadge.innerHTML = "🟡 Low Stock (Knitted to Order)";
+  } else {
+    stockBadge.className = "stock-status-badge";
+    stockBadge.innerHTML = "🟢 In Stock (Ready to Ship)";
+  }
+
   // Reset Review Form hidden product field
   document.getElementById("review-product-name").value = product.name;
 
@@ -413,6 +496,34 @@ function openProductPopup(id) {
   const mainImg = document.getElementById("popup-main-image");
   mainImg.src = product.images[0] || "/assets/placeholder.png";
 
+  // High-End Premium Cursor-Following Zoom effect on Main Image Popup
+  const mainImgWrapper = document.querySelector(".popup-main-img-wrapper");
+  if (mainImgWrapper && mainImg) {
+    // Clear old listeners if any by cloning or replacing
+    const newWrapper = mainImgWrapper.cloneNode(true);
+    mainImgWrapper.parentNode.replaceChild(newWrapper, mainImgWrapper);
+
+    const activeWrapper = document.querySelector(".popup-main-img-wrapper");
+    const activeImg = document.getElementById("popup-main-image");
+
+    activeWrapper.addEventListener("mousemove", (e) => {
+      const rect = activeWrapper.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const xPercent = (x / rect.width) * 100;
+      const yPercent = (y / rect.height) * 100;
+      
+      activeImg.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+      activeImg.style.transform = "scale(2.2)";
+    });
+
+    activeWrapper.addEventListener("mouseleave", () => {
+      activeImg.style.transform = "scale(1)";
+      activeImg.style.transformOrigin = "center";
+    });
+  }
+
   // Thumbnails Grid
   const thumbContainer = document.getElementById("popup-thumbnails-container");
   thumbContainer.innerHTML = "";
@@ -422,7 +533,8 @@ function openProductPopup(id) {
     thumb.className = `thumb-img ${idx === 0 ? 'active' : ''}`;
     thumb.innerHTML = `<img src="${img}" alt="${product.name} thumb ${idx+1}">`;
     thumb.addEventListener("click", () => {
-      mainImg.src = img;
+      const activeImg = document.getElementById("popup-main-image");
+      activeImg.src = img;
       // Manage active
       document.querySelectorAll(".thumb-img").forEach(t => t.classList.remove("active"));
       thumb.classList.add("active");
@@ -450,14 +562,15 @@ function openProductPopup(id) {
   // Load reviews live
   fetchAndRenderReviews(product.name);
 
-  // Setup Order button action inside details
+  // Setup Add to Cart action inside modal
   const orderBtn = document.getElementById("popup-order-btn");
+  orderBtn.innerText = "Add to Cart 💖";
   orderBtn.onclick = () => {
     const chosenColor = document.querySelector('input[name="popup-selected-color"]:checked')?.value || product.colors[0];
     const qty = parseInt(document.getElementById("popup-qty").value) || 1;
     
     closeModal("product-detail-modal");
-    triggerCheckoutFlow(product, chosenColor, qty);
+    addToCart(product.id, chosenColor, qty);
   };
 
   openModal("product-detail-modal");
@@ -489,35 +602,14 @@ function adjustQty(val) {
   updatePopupPricing(); // Recalculate in real time
 }
 
-// Quick Order opens checkout modal directly
+// Quick Order opens cart drawer sidebar instantly
 function openQuickOrder(id) {
   const product = APP_STATE.products.find(p => p.id === id);
   if (!product) return;
   
   const defaultColor = product.colors[0] || "Pastel Pink";
-  triggerCheckoutFlow(product, defaultColor, 1);
-}
-
-// Open Order Checkout Form Overlay
-function triggerCheckoutFlow(product, color, qty) {
-  document.getElementById("summary-product-name").innerText = product.name;
-  document.getElementById("summary-product-meta").innerText = `Color: ${color} | Quantity: ${qty}`;
-  
-  const subtotal = product.price * qty;
-  const delivery = calculateDeliveryCharge(subtotal);
-  const total = subtotal + delivery;
-
-  document.getElementById("summary-subtotal").innerText = `₹${subtotal}`;
-  document.getElementById("summary-delivery").innerText = `₹${delivery}`;
-  document.getElementById("summary-total-price").innerText = `₹${total}`;
-
-  // Populate hidden items
-  document.getElementById("order-item-id").value = product.id;
-  document.getElementById("order-item-color").value = color;
-  document.getElementById("order-item-qty").value = qty;
-  document.getElementById("order-item-delivery").value = delivery;
-
-  openModal("order-form-modal");
+  addToCart(product.id, defaultColor, 1);
+  toggleCartDrawer(true);
 }
 
 // 8. Order Placement Submission
@@ -546,30 +638,50 @@ async function setupEventListeners() {
     scrollToSection("shop");
   });
 
-  // Order Submission Form
+  // Order Submission Form Upgraded E-Commerce Handler
   const orderForm = document.getElementById("order-submit-form");
   if (orderForm) {
     orderForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       
-      const pId = document.getElementById("order-item-id").value;
-      const product = APP_STATE.products.find(p => p.id === pId);
-      if (!product) return;
+      if (APP_STATE.cart.length === 0) {
+        alert("Your cart is empty! Add products before checking out.");
+        closeModal("order-form-modal");
+        return;
+      }
 
       const name = document.getElementById("o-name").value;
       const phone = document.getElementById("o-phone").value;
       const address = document.getElementById("o-address").value;
-      const color = document.getElementById("order-item-color").value;
-      const qty = document.getElementById("order-item-qty").value;
-      const deliveryCharge = document.getElementById("order-item-delivery").value;
+
+      // Compile products list array
+      const products = APP_STATE.cart.map(item => {
+        const product = APP_STATE.products.find(p => p.id === item.productId);
+        return {
+          id: item.productId,
+          name: product ? product.name : "Handmade Woolen Band",
+          color: item.color,
+          quantity: item.quantity,
+          price: product ? product.price : 0
+        };
+      });
+
+      let subtotal = 0;
+      products.forEach(p => {
+        subtotal += p.price * p.quantity;
+      });
+
+      const deliveryCharge = calculateDeliveryCharge(subtotal);
+      const grandTotal = subtotal + deliveryCharge;
 
       const orderData = {
         name,
         phone,
         address,
-        productModel: product.name,
-        quantity: qty,
-        color
+        products,
+        subtotal,
+        deliveryCharge,
+        grandTotal
       };
 
       try {
@@ -584,24 +696,26 @@ async function setupEventListeners() {
         if (res.ok) {
           closeModal("order-form-modal");
           orderForm.reset();
+
+          // Clear cart state
+          APP_STATE.cart = [];
+          saveCart();
           
-          // Construct pre-filled Whatsapp redirect message details with pricing breakdowns
-          const subtotal = product.price * parseInt(qty);
-          const deliveryVal = parseInt(deliveryCharge) || calculateDeliveryCharge(subtotal);
-          const totalVal = subtotal + deliveryVal;
+          // Construct pre-filled WhatsApp e-commerce checkout confirmation summary
+          const productsSummaryStr = products
+            .map(p => `- *${p.name}* x${p.quantity}` + (p.color ? ` (${p.color})` : '') + ` - ₹${p.price * p.quantity}`)
+            .join("\n");
 
           const messageText = `💖 *New Order - Three_Hearts Handmades* 💖\n\n` +
-            `Hi! I have placed an order on your website. Here are my details:\n\n` +
+            `Hi! I have placed an order on your boutique website. Here are my checkout details:\n\n` +
             `*Customer Name:* ${name}\n` +
             `*Phone:* ${phone}\n` +
             `*Delivery Address:* ${address}\n\n` +
             `*Order Details:*\n` +
-            `- *Model:* ${product.name}\n` +
-            `- *Color:* ${color}\n` +
-            `- *Quantity:* ${qty}\n` +
-            `- *Subtotal:* ₹${subtotal}\n` +
-            `- *Delivery Charge:* ₹${deliveryVal}\n` +
-            `- *Total Price:* ₹${totalVal}\n\n` +
+            `${productsSummaryStr}\n\n` +
+            `*Subtotal:* ₹${subtotal}\n` +
+            `*Delivery Charge:* ₹${deliveryCharge}\n` +
+            `*Grand Total:* ₹${grandTotal}\n\n` +
             `Please confirm my order. Thank you!`;
 
           const encodedMsg = encodeURIComponent(messageText);
@@ -610,6 +724,7 @@ async function setupEventListeners() {
           // Open WhatsApp in new tab
           window.open(whatsappUrl, "_blank");
           
+          showToast("Order submitted! Redirecting to WhatsApp... 💬");
           alert("Order submitted successfully! We are redirecting you to WhatsApp to chat directly with our family boutique. 💖");
         } else {
           const errRes = await res.json();
@@ -866,4 +981,252 @@ async function fetchAndRenderReviews(productName) {
     console.error("Error loading reviews:", error);
     list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 20px 0;">Failed to load reviews. 💖</p>`;
   }
+}
+
+// ==========================================================================
+// UPGRADED E-COMMERCE CART ENGINE & PERSISTENCE METHODS
+// ==========================================================================
+
+// Save cart to sessionStorage
+function saveCart() {
+  sessionStorage.setItem("three_hearts_cart", JSON.stringify(APP_STATE.cart));
+  updateCartBadge();
+}
+
+// Load cart from sessionStorage
+function loadCart() {
+  const saved = sessionStorage.getItem("three_hearts_cart");
+  if (saved) {
+    try {
+      APP_STATE.cart = JSON.parse(saved);
+    } catch (e) {
+      APP_STATE.cart = [];
+    }
+  } else {
+    APP_STATE.cart = [];
+  }
+  updateCartBadge();
+}
+
+// Update navbar cart badge counter dynamically
+function updateCartBadge() {
+  const badge = document.getElementById("cart-badge-count");
+  if (!badge) return;
+
+  const totalQty = APP_STATE.cart.reduce((sum, item) => sum + item.quantity, 0);
+  badge.innerText = totalQty;
+
+  // Add micro bounce animation
+  badge.classList.remove("bounce");
+  void badge.offsetWidth; // Trigger reflow
+  badge.classList.add("bounce");
+}
+
+// Open/Close sliding Cart Panel Drawer
+function toggleCartDrawer(isOpen) {
+  const drawer = document.getElementById("cart-drawer");
+  const overlay = document.getElementById("cart-overlay");
+  if (!drawer || !overlay) return;
+
+  if (isOpen) {
+    renderCart();
+    drawer.classList.add("active");
+    overlay.classList.add("active");
+    document.body.style.overflow = "hidden"; // disable background scrolling
+  } else {
+    drawer.classList.remove("active");
+    overlay.classList.remove("active");
+    document.body.style.overflow = ""; // enable background scrolling
+  }
+}
+
+// Add an item to the shopping cart
+function addToCart(productId, color, qty) {
+  const product = APP_STATE.products.find(p => p.id === productId);
+  if (!product) return;
+
+  const existingItemIndex = APP_STATE.cart.findIndex(
+    item => item.productId === productId && item.color === color
+  );
+
+  if (existingItemIndex > -1) {
+    APP_STATE.cart[existingItemIndex].quantity += qty;
+  } else {
+    APP_STATE.cart.push({
+      productId,
+      color,
+      quantity: qty
+    });
+  }
+
+  saveCart();
+  showToast(`${product.name} added to cart ❤️`);
+  
+  // Dynamic update if drawer is currently open
+  const drawer = document.getElementById("cart-drawer");
+  if (drawer && drawer.classList.contains("active")) {
+    renderCart();
+  }
+}
+
+// Remove an item from the cart
+function removeFromCart(productId, color) {
+  const product = APP_STATE.products.find(p => p.id === productId);
+  APP_STATE.cart = APP_STATE.cart.filter(
+    item => !(item.productId === productId && item.color === color)
+  );
+  saveCart();
+  showToast(product ? `${product.name} removed from cart 💔` : "Product removed from cart 💔");
+  renderCart();
+}
+
+// Adjust cart item quantity inside drawer
+function changeCartItemQty(productId, color, change) {
+  const itemIndex = APP_STATE.cart.findIndex(
+    item => item.productId === productId && item.color === color
+  );
+  if (itemIndex === -1) return;
+
+  APP_STATE.cart[itemIndex].quantity += change;
+  if (APP_STATE.cart[itemIndex].quantity < 1) {
+    removeFromCart(productId, color);
+    return;
+  }
+
+  saveCart();
+  renderCart();
+}
+
+// Render dynamic cart drawer listing
+function renderCart() {
+  const container = document.getElementById("cart-items-container");
+  const footer = document.getElementById("cart-drawer-footer");
+  if (!container || !footer) return;
+
+  if (APP_STATE.cart.length === 0) {
+    container.innerHTML = `
+      <div class="empty-cart-message">
+        <div class="empty-cart-heart">🧶</div>
+        <p style="font-weight: 600; color: var(--text-dark);">Your cart is empty & cold...</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Explore our boutique and add some handmade warmth! 💖</p>
+        <button class="btn-card-order ripple-btn" onclick="toggleCartDrawer(false); scrollToSection('shop')" style="margin-top: 15px; padding: 10px 24px;">Go Shop 🌸</button>
+      </div>
+    `;
+    footer.style.display = "none";
+    return;
+  }
+
+  footer.style.display = "flex";
+  container.innerHTML = "";
+
+  let subtotal = 0;
+
+  APP_STATE.cart.forEach(item => {
+    const product = APP_STATE.products.find(p => p.id === item.productId);
+    if (!product) return;
+
+    const itemTotal = product.price * item.quantity;
+    subtotal += itemTotal;
+
+    const card = document.createElement("div");
+    card.className = "cart-item-card";
+    card.innerHTML = `
+      <img class="cart-item-img" src="${product.images[0]}" alt="${product.name}">
+      <div class="cart-item-details">
+        <div>
+          <h4 class="cart-item-title">${product.name}</h4>
+          <p class="cart-item-meta">Color: ${item.color} | Price: ₹${product.price}</p>
+        </div>
+        <div class="cart-item-footer">
+          <div class="cart-qty-controls">
+            <button class="cart-qty-btn" onclick="changeCartItemQty('${product.id}', '${item.color}', -1)">&minus;</button>
+            <span class="cart-qty-val">${item.quantity}</span>
+            <button class="cart-qty-btn" onclick="changeCartItemQty('${product.id}', '${item.color}', 1)">&plus;</button>
+          </div>
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <span class="cart-item-price">₹${itemTotal}</span>
+            <button class="cart-remove-btn" onclick="removeFromCart('${product.id}', '${item.color}')" title="Remove Item">
+              <!-- Trash SVG -->
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  const deliveryCharge = calculateDeliveryCharge(subtotal);
+  const grandTotal = subtotal + deliveryCharge;
+
+  document.getElementById("cart-subtotal").innerText = `₹${subtotal}`;
+  document.getElementById("cart-delivery").innerText = `₹${deliveryCharge}`;
+  document.getElementById("cart-grand-total").innerText = `₹${grandTotal}`;
+}
+
+// Show premium toast popup alerts
+function showToast(message) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const card = document.createElement("div");
+  card.className = "toast-card";
+  card.innerHTML = `<span>❤️</span> ${message}`;
+
+  container.appendChild(card);
+
+  // Auto clean up after 3.2 seconds
+  setTimeout(() => {
+    card.classList.add("slide-out");
+    setTimeout(() => {
+      card.remove();
+    }, 300);
+  }, 3200);
+}
+
+// Open Checkout Address Details Form Modal populated with e-commerce pricing summaries
+function openCheckoutModal() {
+  if (APP_STATE.cart.length === 0) {
+    showToast("Please add items to your cart first!");
+    return;
+  }
+
+  // Close Cart Drawer Sidebar
+  toggleCartDrawer(false);
+
+  // Render dynamic product summary inside Checkout Modal
+  const checkoutList = document.getElementById("checkout-items-list");
+  if (!checkoutList) return;
+
+  checkoutList.innerHTML = "";
+  let subtotal = 0;
+
+  APP_STATE.cart.forEach(item => {
+    const product = APP_STATE.products.find(p => p.id === item.productId);
+    if (!product) return;
+
+    const itemTotal = product.price * item.quantity;
+    subtotal += itemTotal;
+
+    const summaryRow = document.createElement("div");
+    summaryRow.className = "checkout-item-summary";
+    summaryRow.innerHTML = `
+      <div>
+        <span class="checkout-item-title-meta">${product.name}</span>
+        ${item.color ? `<span class="checkout-item-qty-meta">(${item.color})</span>` : ''}
+        <span class="checkout-item-qty-meta">x${item.quantity}</span>
+      </div>
+      <span class="checkout-item-price-meta">₹${itemTotal}</span>
+    `;
+    checkoutList.appendChild(summaryRow);
+  });
+
+  const deliveryCharge = calculateDeliveryCharge(subtotal);
+  const grandTotal = subtotal + deliveryCharge;
+
+  document.getElementById("summary-subtotal").innerText = `₹${subtotal}`;
+  document.getElementById("summary-delivery").innerText = `₹${deliveryCharge}`;
+  document.getElementById("summary-total-price").innerText = `₹${grandTotal}`;
+
+  openModal("order-form-modal");
 }
