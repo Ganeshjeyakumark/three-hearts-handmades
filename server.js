@@ -6,7 +6,6 @@ const multer = require('multer');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
 
 const app = express();
@@ -377,16 +376,18 @@ function writeProducts(products) {
   }
 }
 
-// Multer storage configuration for product image uploads
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'three-hearts-products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({ storage });
+
 
 // API: Get all products
 app.get('/api/products', (req, res) => {
