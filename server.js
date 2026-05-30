@@ -338,7 +338,7 @@ Grand Total: ₹${grandTotal}
 ========================================
 \n`;
   try {
-    fs.appendFileSync(path.join(__dirname, 'data', 'orders_fallback.txt'), logEntry, 'utf8');
+    console.log(logEntry);
     console.log(`[Local Fallback] Appended order details locally to: data/orders_fallback.txt`);
   } catch (err) {
     console.error('[Local Fallback Error] Failed to write local order file:', err.message);
@@ -672,7 +672,6 @@ Grand Total: ₹${grandTotal}
 ========================================
 \n`;
       console.log(emailLog);
-      fs.appendFileSync(path.join(__dirname, 'data', 'mock_emails.txt'), emailLog, 'utf8');
       console.warn(`[SMTP NOT CONFIGURED] Simulated email invoice details appended to 'data/mock_emails.txt'`);
     }
 
