@@ -430,7 +430,9 @@ const products = rows.map(row => ({
   price: Number(row[2]),
   description: row[3],
   colors: row[4] ? row[4].split(',') : [],
-  images: [row[5]]
+  images: row[5]
+  ? row[5].split('||')
+  : []
 }));
 
 res.json(products);
@@ -438,6 +440,8 @@ res.json(products);
 
 // API: Add a new product
 app.post('/api/products', upload.array('images', 5), async (req, res) => {
+  console.log("Files Received:", req.files.length);
+  console.log(req.files.map(f => f.originalname));
   try {
     const { name, price, description, colors } = req.body;
     if (!name || !price) {
@@ -480,7 +484,7 @@ await sheetsClient.spreadsheets.values.append({
       price,
       description || '',
       parsedColors.join(','),
-      imageUrls[0]
+      imageUrls.join('||')
     ]]
   }
 });
@@ -523,12 +527,18 @@ app.put('/api/products/:id', upload.array('images', 5), async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    let imageUrl = rows[rowNumber - 1][5];
+    let imageUrls = rows[rowNumber - 1][5]
+  ? rows[rowNumber - 1][5].split('||')
+  : [];
 
-    if (req.files && req.files.length > 0) {
-      const result = await uploadToCloudinary(req.files[0].buffer);
-      imageUrl = result.secure_url;
-    }
+if (req.files && req.files.length > 0) {
+  imageUrls = [];
+
+  for (const file of req.files) {
+    const result = await uploadToCloudinary(file.buffer);
+    imageUrls.push(result.secure_url);
+  }
+}
 
     const parsedColors = colors
       ? colors.split(',').map(c => c.trim())
@@ -545,7 +555,7 @@ app.put('/api/products/:id', upload.array('images', 5), async (req, res) => {
           price,
           description || '',
           parsedColors.join(','),
-          imageUrl
+          imageUrls.join('||')
         ]]
       }
     });
