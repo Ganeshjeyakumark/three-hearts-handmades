@@ -321,6 +321,17 @@ async function ensureProductsSheet(sheets) {
     });
   }
 }
+async function getProductsSheetId() {
+  const spreadsheet = await sheetsClient.spreadsheets.get({
+    spreadsheetId
+  });
+
+  const sheet = spreadsheet.data.sheets.find(
+    s => s.properties.title === 'Products'
+  );
+
+  return sheet.properties.sheetId;
+}
 
 // Find a review in Sheets and update its Status column (Column E)
 async function updateSheetReviewStatus(sheets, customerName, productName, reviewText, newStatus) {
@@ -472,8 +483,7 @@ app.post('/api/products', upload.array('images', 5), async (req, res) => {
     if (!name || !price) {
       return res.status(400).json({ error: 'Product name and price are required' });
     }
-
-    const products = readProducts();
+    
     const newId = Date.now().toString();
 
     // Handle uploaded files
@@ -525,61 +535,133 @@ await sheetsClient.spreadsheets.values.append({
 app.put('/api/products/:id', upload.array('images', 5), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, description, colors, existingImages } = req.body;
-    const index = products.findIndex(p => p.id === id);
+    const { name, price, description, colors } = req.body;
 
-    if (index === -1) {
+    if (!sheetsClient) {
+      sheetsClient = initGoogleSheets();
+    }
+
+    await ensureProductsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Products!A:F'
+    });
+
+    const rows = response.data.values || [];
+
+    let rowNumber = -1;
+
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === id) {
+        rowNumber = i + 1;
+        break;
+      }
+    }
+
+    if (rowNumber === -1) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Keep existing images specified by client, or default to empty
-    let imageUrls = [];
-    if (existingImages) {
-      imageUrls = Array.isArray(existingImages) ? existingImages : [existingImages];
+    let imageUrl = rows[rowNumber - 1][5];
+
+    if (req.files && req.files.length > 0) {
+      const result = await uploadToCloudinary(req.files[0].buffer);
+      imageUrl = result.secure_url;
     }
 
-    // Append new uploaded images
-    for (const file of req.files) {
-  const result = await uploadToCloudinary(file.buffer);
-  imageUrls.push(result.secure_url);
-}
-    const parsedColors = Array.isArray(colors) ? colors : (colors ? colors.split(',').map(c => c.trim()) : []);
+    const parsedColors = colors
+      ? colors.split(',').map(c => c.trim())
+      : [];
 
-    products[index] = {
-      id,
-      name: name || products[index].name,
-      price: price ? parseFloat(price) : products[index].price,
-      description: description !== undefined ? description : products[index].description,
-      colors: parsedColors.length > 0 ? parsedColors : products[index].colors,
-      images: imageUrls.length > 0 ? imageUrls : products[index].images
-    };
+    await sheetsClient.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Products!A${rowNumber}:F${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          id,
+          name,
+          price,
+          description || '',
+          parsedColors.join(','),
+          imageUrl
+        ]]
+      }
+    });
 
-    writeProducts(products);
-    res.json({ message: 'Product updated successfully', product: products[index] });
+    res.json({
+      message: 'Product updated successfully'
+    });
+
   } catch (error) {
     console.error('Error updating product:', error);
-    res.status(500).json({ error: 'Server error updating product' });
+    res.status(500).json({
+      error: 'Server error updating product'
+    });
   }
 });
 
 // API: Delete a product
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const products = readProducts();
-    const index = products.findIndex(p => p.id === id);
 
-    if (index === -1) {
+    if (!sheetsClient) {
+      sheetsClient = initGoogleSheets();
+    }
+
+    await ensureProductsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Products!A:F'
+    });
+
+    const rows = response.data.values || [];
+    const productsSheetId = await getProductsSheetId();
+
+    let rowNumber = -1;
+
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === id) {
+        rowNumber = i + 1;
+        break;
+      }
+    }
+
+    if (rowNumber === -1) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const deletedProduct = products.splice(index, 1)[0];
-    writeProducts(products);
+    await sheetsClient.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: productsSheetId,
+                dimension: 'ROWS',
+                startIndex: rowNumber - 1,
+                endIndex: rowNumber
+              }
+            }
+          }
+        ]
+      }
+    });
 
-    res.json({ message: 'Product deleted successfully', id });
+    res.json({
+      message: 'Product deleted successfully',
+      id
+    });
+
   } catch (error) {
     console.error('Error deleting product:', error);
-    res.status(500).json({ error: 'Server error deleting product' });
+    res.status(500).json({
+      error: 'Server error deleting product'
+    });
   }
 });
 
