@@ -281,6 +281,46 @@ async function ensureReviewsSheet(sheets) {
     throw error;
   }
 }
+async function ensureProductsSheet(sheets) {
+  const spreadsheet = await sheets.spreadsheets.get({
+    spreadsheetId
+  });
+
+  const exists = spreadsheet.data.sheets.some(
+    s => s.properties.title === 'Products'
+  );
+
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{
+          addSheet: {
+            properties: {
+              title: 'Products'
+            }
+          }
+        }]
+      }
+    });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Products!A1:F1',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          'Product ID',
+          'Name',
+          'Price',
+          'Description',
+          'Colors',
+          'Image URL'
+        ]]
+      }
+    });
+  }
+}
 
 // Find a review in Sheets and update its Status column (Column E)
 async function updateSheetReviewStatus(sheets, customerName, productName, reviewText, newStatus) {
@@ -398,9 +438,31 @@ function uploadToCloudinary(buffer) {
 
 
 // API: Get all products
-app.get('/api/products', (req, res) => {
-  const products = readProducts();
-  res.json(products);
+app.get('/api/products', async (req, res) => {
+ if (!sheetsClient) {
+  sheetsClient = initGoogleSheets();
+}
+
+await ensureProductsSheet(sheetsClient);
+
+const response =
+  await sheetsClient.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Products!A2:F'
+  });
+
+const rows = response.data.values || [];
+
+const products = rows.map(row => ({
+  id: row[0],
+  name: row[1],
+  price: Number(row[2]),
+  description: row[3],
+  colors: row[4] ? row[4].split(',') : [],
+  images: [row[5]]
+}));
+
+res.json(products);
 });
 
 // API: Add a new product
@@ -412,7 +474,7 @@ app.post('/api/products', upload.array('images', 5), async (req, res) => {
     }
 
     const products = readProducts();
-    const newId = products.length > 0 ? (Math.max(...products.map(p => parseInt(p.id) || 0)) + 1).toString() : "1";
+    const newId = Date.now().toString();
 
     // Handle uploaded files
     let imageUrls = [];
@@ -432,9 +494,26 @@ app.post('/api/products', upload.array('images', 5), async (req, res) => {
       images: imageUrls.length > 0 ? imageUrls : ['/assets/placeholder.png']
     };
 
-    products.push(newProduct);
-    writeProducts(products);
+    if (!sheetsClient) {
+  sheetsClient = initGoogleSheets();
+}
+    await ensureProductsSheet(sheetsClient);
 
+await sheetsClient.spreadsheets.values.append({
+  spreadsheetId,
+  range: 'Products!A:F',
+  valueInputOption: 'USER_ENTERED',
+  requestBody: {
+    values: [[
+      newId,
+      name,
+      price,
+      description || '',
+      parsedColors.join(','),
+      imageUrls[0]
+    ]]
+  }
+});
     res.status(201).json({ message: 'Product added successfully', product: newProduct });
   } catch (error) {
     console.error('Error adding product:', error);
@@ -447,8 +526,6 @@ app.put('/api/products/:id', upload.array('images', 5), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, price, description, colors, existingImages } = req.body;
-
-    const products = readProducts();
     const index = products.findIndex(p => p.id === id);
 
     if (index === -1) {
