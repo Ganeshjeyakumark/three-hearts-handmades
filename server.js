@@ -79,35 +79,14 @@ function deployGeneratedImages() {
 
 deployGeneratedImages();
 
-const productsFilePath = path.join(dataDir, 'products.json');
-const reviewsFilePath = path.join(dataDir, 'reviews.json');
 const mockEmailsFilePath = path.join(dataDir, 'mock_emails.txt');
 const fallbackFilePath = path.join(dataDir, 'orders_fallback.txt');
 
 // Helper to read reviews
-function readReviews() {
-  try {
-    if (!fs.existsSync(reviewsFilePath)) {
-      return [];
-    }
-    const data = fs.readFileSync(reviewsFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading reviews:', error);
-    return [];
-  }
-}
+
 
 // Helper to write reviews
-function writeReviews(reviews) {
-  try {
-    fs.writeFileSync(reviewsFilePath, JSON.stringify(reviews, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Error writing reviews:', error);
-    return false;
-  }
-}
+
 
 // Google Sheets Configuration
 let sheetsClient = null;
@@ -404,29 +383,10 @@ Grand Total: ₹${grandTotal}
 }
 
 // Helper to read products
-function readProducts() {
-  try {
-    if (!fs.existsSync(productsFilePath)) {
-      return [];
-    }
-    const data = fs.readFileSync(productsFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading products:', error);
-    return [];
-  }
-}
+
 
 // Helper to write products
-function writeProducts(products) {
-  try {
-    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Error writing products:', error);
-    return false;
-  }
-}
+
 
 const upload = multer({
   storage: multer.memoryStorage()
@@ -483,7 +443,7 @@ app.post('/api/products', upload.array('images', 5), async (req, res) => {
     if (!name || !price) {
       return res.status(400).json({ error: 'Product name and price are required' });
     }
-    
+
     const newId = Date.now().toString();
 
     // Handle uploaded files
@@ -848,20 +808,46 @@ Grand Total: ₹${grandTotal}
 });
 
 // API: Get all reviews
-app.get('/api/reviews', (req, res) => {
+app.get('/api/reviews', async (req, res) => {
   try {
-    const reviews = readReviews();
-    const approvedOnly = req.query.approved === 'true';
-    
-    if (approvedOnly) {
-      const filtered = reviews.filter(r => r.approved === true);
-      return res.json(filtered);
+    if (!sheetsClient) {
+      sheetsClient = initGoogleSheets();
     }
-    
+
+    await ensureReviewsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Reviews!A2:F'
+    });
+
+    const rows = response.data.values || [];
+
+    const reviews = rows.map((row, index) => ({
+      id: index.toString(),
+      customerName: row[0] || '',
+      productName: row[1] || '',
+      rating: parseInt(row[2]) || 0,
+      review: row[3] || '',
+      approved: row[4] === 'Approved',
+      rejected: row[4] === 'Rejected',
+      status: row[4] || 'Pending',
+      createdAt: row[5] || ''
+    }));
+
+    const approvedOnly = req.query.approved === 'true';
+
+    if (approvedOnly) {
+      return res.json(reviews.filter(r => r.approved));
+    }
+
     res.json(reviews);
+
   } catch (error) {
     console.error('Error fetching reviews:', error);
-    res.status(500).json({ error: 'Server error fetching reviews' });
+    res.status(500).json({
+      error: 'Server error fetching reviews'
+    });
   }
 });
 
@@ -869,61 +855,58 @@ app.get('/api/reviews', (req, res) => {
 app.post('/api/reviews', async (req, res) => {
   try {
     const { customerName, productName, rating, review } = req.body;
-    
+
     if (!customerName || !productName || !rating || !review) {
-      return res.status(400).json({ error: 'All fields are required' });
+      return res.status(400).json({
+        error: 'All fields are required'
+      });
     }
-    
+
     const ratingInt = parseInt(rating);
+
     if (isNaN(ratingInt) || ratingInt < 1 || ratingInt > 5) {
-      return res.status(400).json({ error: 'Rating must be a number between 1 and 5' });
+      return res.status(400).json({
+        error: 'Rating must be between 1 and 5'
+      });
     }
-    
-    const reviews = readReviews();
+
     const orderDate = new Date();
-    const formattedDate = orderDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-    
-    const newReview = {
-      id: Date.now().toString(),
-      customerName,
-      productName,
-      rating: ratingInt,
-      review,
-      approved: false,
-      createdAt: orderDate.toISOString()
-    };
-    
-    reviews.push(newReview);
-    writeReviews(reviews);
-    
-    // Google Sheets Sync
+    const formattedDate = orderDate.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata'
+    });
+
     if (!sheetsClient) {
       sheetsClient = initGoogleSheets();
     }
-    
-    if (sheetsClient) {
-      try {
-        await ensureReviewsSheet(sheetsClient);
-        const currentSpreadsheetId = process.env.SPREADSHEET_ID;
-        // Append row: Customer Name | Product Name | Rating | Review | Status | Date & Time
-        await sheetsClient.spreadsheets.values.append({
-          spreadsheetId: currentSpreadsheetId,
-          range: 'Reviews!A:F',
-          valueInputOption: 'USER_ENTERED',
-          requestBody: {
-            values: [[customerName, productName, ratingInt, review, 'Pending', formattedDate]]
-          }
-        });
-        console.log('[Google Sheets] Review successfully synced to Sheets (Pending).');
-      } catch (err) {
-        console.error('[Google Sheets API Fail] Review append failed:', err.message);
+
+    await ensureReviewsSheet(sheetsClient);
+
+    await sheetsClient.spreadsheets.values.append({
+      spreadsheetId,
+      range: 'Reviews!A:F',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          customerName,
+          productName,
+          ratingInt,
+          review,
+          'Pending',
+          formattedDate
+        ]]
       }
-    }
-    
-    res.status(201).json({ message: 'Review submitted successfully and is pending moderation!', review: newReview });
+    });
+
+    res.status(201).json({
+      message: 'Review submitted successfully and is pending moderation!'
+    });
+
   } catch (error) {
     console.error('Error submitting review:', error);
-    res.status(500).json({ error: 'Server error submitting review' });
+
+    res.status(500).json({
+      error: 'Server error submitting review'
+    });
   }
 });
 
@@ -931,36 +914,47 @@ app.post('/api/reviews', async (req, res) => {
 app.put('/api/reviews/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
-    const reviews = readReviews();
-    const index = reviews.findIndex(r => r.id === id);
-    
-    if (index === -1) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-    
-    reviews[index].approved = true;
-    reviews[index].rejected = false;
-    writeReviews(reviews);
-    
-    // Sync status to Google Sheets
+
     if (!sheetsClient) {
       sheetsClient = initGoogleSheets();
     }
-    
-    if (sheetsClient) {
-      await updateSheetReviewStatus(
-        sheetsClient,
-        reviews[index].customerName,
-        reviews[index].productName,
-        reviews[index].review,
-        'Approved'
-      );
+
+    await ensureReviewsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Reviews!A:F'
+    });
+
+    const rows = response.data.values || [];
+
+    const rowNumber = parseInt(id) + 2;
+
+    if (!rows[rowNumber - 2]) {
+      return res.status(404).json({
+        error: 'Review not found'
+      });
     }
-    
-    res.json({ message: 'Review approved successfully', review: reviews[index] });
+
+    await sheetsClient.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Reviews!E${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [['Approved']]
+      }
+    });
+
+    res.json({
+      message: 'Review approved successfully'
+    });
+
   } catch (error) {
     console.error('Error approving review:', error);
-    res.status(500).json({ error: 'Server error approving review' });
+
+    res.status(500).json({
+      error: 'Server error approving review'
+    });
   }
 });
 
@@ -968,36 +962,47 @@ app.put('/api/reviews/:id/approve', async (req, res) => {
 app.put('/api/reviews/:id/reject', async (req, res) => {
   try {
     const { id } = req.params;
-    const reviews = readReviews();
-    const index = reviews.findIndex(r => r.id === id);
-    
-    if (index === -1) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-    
-    reviews[index].approved = false;
-    reviews[index].rejected = true;
-    writeReviews(reviews);
-    
-    // Sync status to Google Sheets
+
     if (!sheetsClient) {
       sheetsClient = initGoogleSheets();
     }
-    
-    if (sheetsClient) {
-      await updateSheetReviewStatus(
-        sheetsClient,
-        reviews[index].customerName,
-        reviews[index].productName,
-        reviews[index].review,
-        'Rejected'
-      );
+
+    await ensureReviewsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Reviews!A:F'
+    });
+
+    const rows = response.data.values || [];
+
+    const rowNumber = parseInt(id) + 2;
+
+    if (!rows[rowNumber - 2]) {
+      return res.status(404).json({
+        error: 'Review not found'
+      });
     }
-    
-    res.json({ message: 'Review rejected successfully', review: reviews[index] });
+
+    await sheetsClient.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Reviews!E${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [['Rejected']]
+      }
+    });
+
+    res.json({
+      message: 'Review rejected successfully'
+    });
+
   } catch (error) {
     console.error('Error rejecting review:', error);
-    res.status(500).json({ error: 'Server error rejecting review' });
+
+    res.status(500).json({
+      error: 'Server error rejecting review'
+    });
   }
 });
 
@@ -1005,35 +1010,67 @@ app.put('/api/reviews/:id/reject', async (req, res) => {
 app.delete('/api/reviews/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const reviews = readReviews();
-    const index = reviews.findIndex(r => r.id === id);
-    
-    if (index === -1) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-    
-    const deletedReview = reviews.splice(index, 1)[0];
-    writeReviews(reviews);
-    
-    // Sync status to Google Sheets
+
     if (!sheetsClient) {
       sheetsClient = initGoogleSheets();
     }
-    
-    if (sheetsClient) {
-      await updateSheetReviewStatus(
-        sheetsClient,
-        deletedReview.customerName,
-        deletedReview.productName,
-        deletedReview.review,
-        'Deleted'
-      );
+
+    await ensureReviewsSheet(sheetsClient);
+
+    const response = await sheetsClient.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Reviews!A:F'
+    });
+
+    const rows = response.data.values || [];
+
+    const rowNumber = parseInt(id) + 2;
+
+    if (!rows[rowNumber - 2]) {
+      return res.status(404).json({
+        error: 'Review not found'
+      });
     }
-    
-    res.json({ message: 'Review deleted successfully', id });
+
+    const spreadsheet = await sheetsClient.spreadsheets.get({
+      spreadsheetId
+    });
+
+    const reviewsSheet = spreadsheet.data.sheets.find(
+      s => s.properties.title === 'Reviews'
+    );
+
+    const reviewsSheetId = reviewsSheet.properties.sheetId;
+
+    await sheetsClient.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: reviewsSheetId,
+                dimension: 'ROWS',
+                startIndex: rowNumber - 1,
+                endIndex: rowNumber
+              }
+            }
+          }
+        ]
+      }
+    });
+
+    res.json({
+      message: 'Review deleted successfully',
+      id
+    });
+
   } catch (error) {
     console.error('Error deleting review:', error);
-    res.status(500).json({ error: 'Server error deleting review' });
+
+    res.status(500).json({
+      error: 'Server error deleting review'
+    });
   }
 });
 
