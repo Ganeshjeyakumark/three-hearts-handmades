@@ -2429,3 +2429,159 @@ footer {
   background:#8E6070;
   color:white;
 }
+/* =========================
+   MOBILE RESPONSIVE FIXES
+   ========================= */
+
+@media (max-width: 768px){
+
+  /* Header */
+  header{
+    width:95%;
+    padding:10px 15px;
+  }
+
+  .logo{
+    font-size:1.1rem;
+  }
+
+  .nav-actions{
+    gap:10px;
+  }
+
+  .btn-header-order{
+    padding:8px 12px;
+    font-size:0.8rem;
+  }
+
+  /* Hero */
+  .hero{
+    padding:30px 15px;
+  }
+
+  .hero h1{
+    font-size:2rem;
+    line-height:1.3;
+  }
+
+  .hero p.subtitle{
+    font-size:0.95rem;
+  }
+
+  .hero-ctas{
+    flex-direction:column;
+    width:100%;
+  }
+
+  .btn-primary,
+  .btn-secondary{
+    width:100%;
+    justify-content:center;
+  }
+
+  /* Banner */
+  .banner-container{
+    height:250px;
+    width:100%;
+    border-radius:20px;
+  }
+
+  .slide-overlay{
+    padding:20px;
+  }
+
+  .slide-overlay h3{
+    font-size:1.2rem;
+  }
+
+  .slide-overlay p{
+    font-size:0.85rem;
+  }
+
+  /* Product Grid */
+  .product-grid{
+    grid-template-columns:1fr;
+    gap:20px;
+  }
+
+  .product-card{
+    width:100%;
+  }
+
+  .product-image-wrapper{
+    height:280px;
+  }
+
+  /* Product Footer */
+  .product-footer{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .btn-card-order,
+  .btn-card-add-cart{
+    width:100%;
+    text-align:center;
+  }
+
+  .product-footer-interaction-row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  /* Product Popup */
+  .modal-content{
+    width:95%;
+    max-height:90vh;
+    padding:20px;
+  }
+
+  .popup-title{
+    font-size:1.6rem;
+  }
+
+  .popup-price{
+    font-size:1.4rem;
+  }
+
+  .popup-thumbnails{
+    overflow-x:auto;
+    padding-bottom:8px;
+  }
+
+  .thumb-img{
+    min-width:65px;
+  }
+
+  /* Contact */
+  .contact-container{
+    padding:20px;
+  }
+
+  /* Cart */
+  .cart-drawer{
+    max-width:100%;
+    width:100%;
+  }
+
+  .cart-item-card{
+    flex-direction:column;
+  }
+
+  .cart-item-img{
+    width:100%;
+    height:180px;
+  }
+
+  /* Footer */
+  .footer-container{
+    grid-template-columns:1fr;
+    text-align:center;
+  }
+
+  .social-links{
+    justify-content:center;
+  }
+
+}
