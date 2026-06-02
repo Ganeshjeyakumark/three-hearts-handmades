@@ -328,34 +328,36 @@ function renderProducts(products) {
   products.forEach((product) => {
     // Generate color radio pill buttons HTML
     let colorsHtml = "";
-    const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0] : "Pastel Pink";
-    
-    if (product.colors && product.colors.length > 0) {
-      product.colors.forEach((col, idx) => {
-        let dotColor = '#8E6070'; // fallback
-        const lCol = col.toLowerCase();
-        if (lCol.includes('pink')) dotColor = '#FFE5EC';
-        else if (lCol.includes('cream') || lCol.includes('white')) dotColor = '#FFFDF9';
-        else if (lCol.includes('lavender') || lCol.includes('purple')) dotColor = '#E8E7F5';
-        else if (lCol.includes('peach') || lCol.includes('orange')) dotColor = '#FCE1D4';
-        else if (lCol.includes('yellow')) dotColor = '#FEF3C7';
+    const defaultColor =
+  product.colors && product.colors.length > 0
+    ? product.colors[0]
+    : "Default";
 
-        colorsHtml += `<button class="card-color-option-btn ${idx === 0 ? 'active' : ''}" 
-                               style="background-color: ${dotColor};" 
-                               title="${col}" 
-                               data-color="${col}"
-                               onclick="selectCardColor(this)"></button>`;
-      });
-    }
+if (product.colors && product.colors.length > 0) {
+  product.colors.forEach((col, idx) => {
+    colorsHtml += `
+      <button
+        class="card-color-text-btn ${idx === 0 ? 'active' : ''}"
+        data-index="${idx}"
+        data-color="${col}"
+        onclick="selectCardColor(this)">
+        ${col}
+      </button>
+    `;
+  });
+}
+    
 
     const card = document.createElement("div");
     card.className = "product-card";
-    
+    card.dataset.images =
+   JSON.stringify(product.images);
     // Set two images if available, else placeholders
     const img1 = product.images[0] || "/assets/placeholder.png";
     const img2 = product.images[1] || product.images[0] || "/assets/placeholder.png";
 
     // Set custom card state attributes
+    
     card.setAttribute("data-selected-color", defaultColor);
     card.setAttribute("data-quantity", "1");
 
@@ -400,15 +402,34 @@ function selectCardColor(element) {
   const card = element.closest(".product-card");
   if (!card) return;
 
-  const chosenColor = element.getAttribute("data-color");
-  card.setAttribute("data-selected-color", chosenColor);
+  const chosenColor =
+      element.getAttribute("data-color");
 
-  // Toggle active rings
-  const colorBtns = card.querySelectorAll(".card-color-option-btn");
-  colorBtns.forEach(btn => btn.classList.remove("active"));
+  const imageIndex =
+      parseInt(element.getAttribute("data-index"));
+
+  card.setAttribute(
+      "data-selected-color",
+      chosenColor
+  );
+
+  // Active button
+  card.querySelectorAll(".card-color-text-btn")
+      .forEach(btn => btn.classList.remove("active"));
+
   element.classList.add("active");
-}
 
+  // Change image
+  const images =
+      JSON.parse(card.dataset.images || "[]");
+
+  const mainImg =
+      card.querySelector(".product-img-primary");
+
+  if (images[imageIndex]) {
+      mainImg.src = images[imageIndex];
+  }
+}
 // Inline card selection action helper: adjusts card ordering quantity
 function adjustCardQty(element, val) {
   const card = element.closest(".product-card");

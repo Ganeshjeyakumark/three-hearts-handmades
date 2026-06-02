@@ -2415,4 +2415,17 @@ footer {
   color: #B45309;
   border-color: rgba(245, 158, 11, 0.2);
 }
+.card-color-text-btn{
+  padding:8px 14px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  background:#f5f5f5;
+  font-size:13px;
+  transition:all .3s ease;
+}
 
+.card-color-text-btn.active{
+  background:#8E6070;
+  color:white;
+}
