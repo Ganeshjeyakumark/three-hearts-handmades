@@ -549,33 +549,47 @@ function openProductPopup(id) {
   const thumbContainer = document.getElementById("popup-thumbnails-container");
   thumbContainer.innerHTML = "";
 
-  product.images.forEach((img, idx) => {
-    const thumb = document.createElement("div");
-    thumb.className = `thumb-img ${idx === 0 ? 'active' : ''}`;
-    thumb.innerHTML = `<img src="${img}" alt="${product.name} thumb ${idx+1}">`;
-    thumb.addEventListener("click", () => {
-      const activeImg = document.getElementById("popup-main-image");
-      activeImg.src = img;
-      // Manage active
-      document.querySelectorAll(".thumb-img").forEach(t => t.classList.remove("active"));
-      thumb.classList.add("active");
-    });
-    thumbContainer.appendChild(thumb);
+  const colorContainer = document.getElementById("popup-colors-container");
+colorContainer.innerHTML = "";
+
+product.colors.forEach((col, idx) => {
+  const labelBtn = document.createElement("label");
+  labelBtn.className = "color-radio-btn";
+
+  labelBtn.innerHTML = `
+    <input
+      type="radio"
+      name="popup-selected-color"
+      value="${col}"
+      data-index="${idx}"
+      ${idx === 0 ? "checked" : ""}>
+    <span class="color-radio-label">${col}</span>
+  `;
+
+  colorContainer.appendChild(labelBtn);
+
+  const radio = labelBtn.querySelector("input");
+
+  radio.addEventListener("change", () => {
+    if (product.images[idx]) {
+      document.getElementById("popup-main-image").src =
+        product.images[idx];
+    }
+
+    document.querySelectorAll(".thumb-img")
+      .forEach(t => t.classList.remove("active"));
+
+    const thumbs =
+      document.querySelectorAll(".thumb-img");
+
+    if (thumbs[idx]) {
+      thumbs[idx].classList.add("active");
+    }
   });
+});     
 
   // Colors radio group
-  const colorContainer = document.getElementById("popup-colors-container");
-  colorContainer.innerHTML = "";
 
-  product.colors.forEach((col, idx) => {
-    const labelBtn = document.createElement("label");
-    labelBtn.className = "color-radio-btn";
-    labelBtn.innerHTML = `
-      <input type="radio" name="popup-selected-color" value="${col}" ${idx === 0 ? 'checked' : ''}>
-      <span class="color-radio-label">${col}</span>
-    `;
-    colorContainer.appendChild(labelBtn);
-  });
 
   // Initialize Price Breakdown
   updatePopupPricing();
