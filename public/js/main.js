@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupReviewStars();
   setupReviewForm();
   loadCart(); // Load persisted cart
+  startDealTimer();
 });
 
 // 1. Loading Screen
@@ -375,7 +376,14 @@ if (product.colors && product.colors.length > 0) {
         <p class="product-description-snippet">${product.description}</p>
         <div class="product-footer" style="display:flex; flex-direction:column; align-items:stretch; gap:10px; margin-top:auto; padding-top:15px; border-top:1px solid rgba(255, 229, 236, 0.5);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="product-price">₹${product.price}</div>
+            <div class="product-price-wrapper">
+   <span class="old-price">₹${product.price * 2}</span>
+   <span class="offer-price">₹${product.price}</span>
+</div>
+
+<div class="deal-timer">
+   🔥 Offer Ends In: <span class="countdown">24:00:00</span>
+</div>
             <!-- Dynamic Qty Selector inline on card -->
             <div class="card-qty-selector">
               <button class="card-qty-btn" type="button" onclick="adjustCardQty(this, -1)">&minus;</button>
@@ -706,18 +714,11 @@ async function setupEventListeners() {
         subtotal += p.price * p.quantity;
       });
 
-      const deliveryCharge = calculateDeliveryCharge(subtotal);
-      const grandTotal = subtotal + deliveryCharge;
+      document.getElementById("cart-subtotal").innerText = `₹${subtotal}`;
 
-      const orderData = {
-        name,
-        phone,
-        address,
-        products,
-        subtotal,
-        deliveryCharge,
-        grandTotal
-      };
+// Hide delivery & total in cart
+document.getElementById("cart-delivery").parentElement.style.display = "none";
+document.getElementById("cart-grand-total").parentElement.style.display = "none";
 
       try {
         const res = await fetch("/api/orders", {
@@ -1221,6 +1222,9 @@ function showToast(message) {
 
 // Open Checkout Address Details Form Modal populated with e-commerce pricing summaries
 function openCheckoutModal() {
+  // Show pricing rows again in checkout
+document.getElementById("cart-delivery").parentElement.style.display = "";
+document.getElementById("cart-grand-total").parentElement.style.display = "";
   if (APP_STATE.cart.length === 0) {
     showToast("Please add items to your cart first!");
     return;
@@ -1265,3 +1269,30 @@ function openCheckoutModal() {
 
   openModal("order-form-modal");
 }
+function startDealTimer() {
+
+    let totalSeconds = 24 * 60 * 60;
+
+    function updateTimer() {
+
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+
+        document.querySelectorAll(".countdown").forEach(el => {
+            el.innerText =
+                String(hrs).padStart(2, "0") + ":" +
+                String(mins).padStart(2, "0") + ":" +
+                String(secs).padStart(2, "0");
+        });
+
+        totalSeconds--;
+
+        if (totalSeconds < 0) {
+            totalSeconds = 24 * 60 * 60;
+        }
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+} 
