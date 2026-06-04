@@ -711,8 +711,20 @@ async function setupEventListeners() {
       document.getElementById("cart-subtotal").innerText = `₹${subtotal}`;
 
 // Hide delivery & total in cart
-document.getElementById("cart-delivery").parentElement.style.display = "none";
-document.getElementById("cart-grand-total").parentElement.style.display = "none";
+
+
+const deliveryCharge = calculateDeliveryCharge(subtotal);
+const grandTotal = subtotal + deliveryCharge;
+
+const orderData = {
+  name,
+  phone,
+  address,
+  products,
+  subtotal,
+  deliveryCharge,
+  grandTotal
+};
 
       try {
         const res = await fetch("/api/orders", {
