@@ -862,7 +862,7 @@ function scrollToSection(id) {
 
 // Calculate Delivery Fee based on subtotal threshold
 function calculateDeliveryCharge(subtotal) {
-  return subtotal < 75 ? 50 : 25;
+   return 30;
 }
 
 // Smooth numeric updates
