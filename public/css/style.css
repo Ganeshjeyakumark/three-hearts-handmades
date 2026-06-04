@@ -2599,15 +2599,14 @@ footer {
 }
 
 .deal-timer{
-    margin-top:4px;
+    margin-top:5px;
     background:#fff0f3;
     color:#d90429;
-    padding:3px 6px;
-    border-radius:5px;
-    font-size:10px;
-    font-weight:500;
+    padding:4px 8px;
+    border-radius:6px;
+    font-size:11px;
+    font-weight:600;
     text-align:center;
-    display:inline-block;
 }
 .available-colors{
     font-size:14px;
