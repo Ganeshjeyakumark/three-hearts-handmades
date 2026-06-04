@@ -2608,3 +2608,8 @@ footer {
     font-weight:600;
     text-align:center;
 }
+.available-colors{
+    font-size:14px;
+    color:#8e6070;
+    font-weight:500;
+}

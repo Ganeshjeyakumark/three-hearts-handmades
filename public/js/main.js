@@ -335,17 +335,11 @@ function renderProducts(products) {
     : "Default";
 
 if (product.colors && product.colors.length > 0) {
-  product.colors.forEach((col, idx) => {
-    colorsHtml += `
-      <button
-        class="card-color-text-btn ${idx === 0 ? 'active' : ''}"
-        data-index="${idx}"
-        data-color="${col}"
-        onclick="selectCardColor(this)">
-        ${col}
-      </button>
-    `;
-  });
+  colorsHtml = `
+    <span class="available-colors">
+      Available Colors: ${product.colors.join(", ")}
+    </span>
+  `;
 }
     
 
